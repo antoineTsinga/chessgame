@@ -8,6 +8,7 @@ export default class Knight implements IPiece {
   isFirstMove: boolean = true;
   name: string = "Knight";
   code: string = "N";
+  value: number = 3;
 
   constructor(color: Color, img: string) {
     this.color = color;

@@ -8,6 +8,7 @@ export default class Rook implements IPiece {
   isFirstMove: boolean = true;
   name: string = "Rook";
   code: string = "R";
+  value: number = 5;
 
   constructor(color: Color, img: string) {
     this.color = color;

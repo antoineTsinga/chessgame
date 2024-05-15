@@ -2,10 +2,15 @@ import React, { useState } from "react";
 import "./Board.css";
 import { createBoard } from "../../core/config/initialBoard.ts";
 import Cell from "../../core/types/Cell.ts";
+import Game from "../../core/config/Game.ts";
 
 const initialBoard = createBoard();
 
-const Board = () => {
+interface BoardProps {
+  game: Game;
+}
+
+const Board: React.FC<BoardProps> = ({ game }) => {
   const [current, setCurrent] = useState<Cell | null>(null);
   const [prevCell, setPrevCell] = useState<Cell | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]);
@@ -24,6 +29,8 @@ const Board = () => {
 
     setPossibleMoves([]);
     setMoveMakeFrom(prevCell);
+
+    //game.movePieceFromCellTo(prevCell, to);
     prevCell?.movePieceTo(to);
     setPrevCell(null);
   };
@@ -41,7 +48,7 @@ const Board = () => {
   return (
     <div className="container">
       <div className="board">
-        {initialBoard.map((row, i) =>
+        {game.board.map((row, i) =>
           row.map((cell, j) => (
             <div
               key={`${i}${j}`}

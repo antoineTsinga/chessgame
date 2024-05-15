@@ -8,11 +8,11 @@ export default class Pawn implements IPiece {
   isFirstMove: boolean = true;
   name: string = "Pawn";
   code: string = "";
+  value: number = 1;
 
   constructor(color: Color, img: string) {
     this.color = color;
     this.img = img;
-    this.isFirstMove = true;
   }
 
   getPossiblesMove(from: Cell, board: BoardType): Cell[] {
@@ -56,10 +56,12 @@ export default class Pawn implements IPiece {
     board: BoardType
   ): boolean => {
     if (!(0 <= row && row < 8 && 0 <= col && col < 8)) {
+      //out of bound
       return false;
     }
 
     if (board[row][col].piece) {
+      // there is a piece on the targe cell (take in diagonale)
       if (from.piece?.color === board[row][col].piece?.color) {
         return false;
       }
@@ -71,7 +73,13 @@ export default class Pawn implements IPiece {
       if (col !== from.column) {
         return false;
       } else {
-        if (row === 4 && !board[5][col].isEmpty) {
+        if (from.row === 6 && row === 4 && !board[5][col].isEmpty) {
+          console.log("ici");
+          return false;
+        }
+
+        if (from.row === 1 && row === 3 && !board[2][col].isEmpty) {
+          console.log("ici");
           return false;
         }
       }

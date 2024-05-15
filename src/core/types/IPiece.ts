@@ -7,6 +7,7 @@ export default interface IPiece {
   isFirstMove: boolean;
   name: string;
   code: string;
+  value: number;
 
   getPossiblesMove(from: Cell, board: BoardType): Cell[];
 }

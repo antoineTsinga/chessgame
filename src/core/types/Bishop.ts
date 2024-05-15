@@ -8,6 +8,7 @@ export default class Bishop implements IPiece {
   isFirstMove: boolean = true;
   name: string = "Bishop";
   code: string = "B";
+  value: number = 3;
 
   constructor(color: Color, img: string) {
     this.color = color;

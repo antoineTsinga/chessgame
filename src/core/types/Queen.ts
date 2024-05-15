@@ -8,6 +8,7 @@ export default class Queen implements IPiece {
   isFirstMove: boolean = true;
   name: string = "Queen";
   code: string = "Q";
+  value: number = 10;
 
   constructor(color: Color, img: string) {
     this.color = color;
