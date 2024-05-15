@@ -46,7 +46,8 @@ const Board = () => {
             <div
               key={`${i}${j}`}
               className={`cell ${
-                current === cell && !cell.isEmpty && "cell-target-piece"
+                (current === cell && !cell.isEmpty && "cell-target-piece") ||
+                (moveMakeFrom === cell && "cell-target-piece")
               } ${cell.color}`}
               onClick={() => handleClick(cell)}
             >
