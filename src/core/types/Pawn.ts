@@ -7,7 +7,7 @@ export default class Pawn implements IPiece {
   img: string;
   isFirstMove: boolean = true;
   name: string = "Pawn";
-  code: string = "";
+  code: string = "P";
   value: number = 1;
 
   constructor(color: Color, img: string) {

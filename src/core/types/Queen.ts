@@ -14,7 +14,6 @@ export default class Queen implements IPiece {
     this.color = color;
     this.img = img;
   }
-  isfirstMove: boolean;
 
   getPossiblesMove(from: Cell, board: BoardType): Cell[] {
     const directions = [

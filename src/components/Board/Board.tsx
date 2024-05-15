@@ -1,10 +1,8 @@
 import React, { useState } from "react";
 import "./Board.css";
-import { createBoard } from "../../core/config/initialBoard.ts";
+
 import Cell from "../../core/types/Cell.ts";
 import Game from "../../core/config/Game.ts";
-
-const initialBoard = createBoard();
 
 interface BoardProps {
   game: Game;
@@ -17,21 +15,24 @@ const Board: React.FC<BoardProps> = ({ game }) => {
   const [moveMakeFrom, setMoveMakeFrom] = useState<Cell | null>(null);
 
   const showPosibleMove = (from: Cell) => {
-    setPossibleMoves(from.movesPossible());
+    setPossibleMoves(game.possibleMoveFrom(from));
     setPrevCell(from);
   };
 
   const makeMove = (to: Cell) => {
-    if (to === prevCell || to?.piece?.color === prevCell?.piece?.color) {
+    if (
+      !prevCell ||
+      to === prevCell ||
+      to?.piece?.color === prevCell?.piece?.color
+    ) {
+      //click on the same cell or change piece to move
       showPosibleMove(to);
       return;
     }
 
     setPossibleMoves([]);
-    setMoveMakeFrom(prevCell);
-
-    //game.movePieceFromCellTo(prevCell, to);
-    prevCell?.movePieceTo(to);
+    //setMoveMakeFrom(prevCell);
+    game.movePieceFromCellTo(prevCell, to);
     setPrevCell(null);
   };
 

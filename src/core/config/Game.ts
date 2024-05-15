@@ -45,9 +45,30 @@ export default class Game {
     return false;
   }
 
+  possibleMoveFrom(cell: Cell) {
+    if (cell.piece == null) {
+      console.log("empty piece");
+      return [];
+    }
+    let possibleMoves = cell.piece?.getPossiblesMove(cell, this.board);
+
+    possibleMoves = possibleMoves?.filter((to) =>
+      this.kingIsSafeWhenPieceMoveFromTo(cell, to)
+    );
+
+    return possibleMoves;
+  }
+
   movePieceFromCellTo(from: Cell, to: Cell): boolean {
     let possibleMoves = from.piece?.getPossiblesMove(from, this.board);
-    possibleMoves?.filter((to) => this.kingIsSafeWhenPieceMoveFromTo(from, to));
+
+    possibleMoves = possibleMoves?.filter((to) =>
+      this.kingIsSafeWhenPieceMoveFromTo(from, to)
+    );
+
+    if (from.piece == null || !possibleMoves?.includes(to)) {
+      return false;
+    }
 
     from.movePieceTo(to);
     return true;
@@ -64,6 +85,119 @@ export default class Game {
   }
 
   kingIsSafeWhenPieceMoveFromTo(from: Cell, to: Cell): boolean {
+    if (from.piece?.code === "K") {
+      return (
+        this.noQueenOrBishopTargetingThisCellForKing(from.piece, to) &&
+        this.noQueenOrRookTargetingThisCellForKing(from.piece, to) &&
+        this.noPawnTargetingThisCellForKing(from.piece.color, to)
+      );
+    } else {
+    }
+    return true;
+  }
+
+  noQueenOrBishopTargetingThisCellForKing(king: IPiece, from: Cell): boolean {
+    const directions = [
+      [1, -1],
+      [-1, 1],
+      [1, 1],
+      [-1, -1],
+    ];
+    for (const [dx, dy] of directions) {
+      let next_row = from.row;
+      let next_col = from.column;
+      while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
+        next_row += dy;
+        next_col += dx;
+
+        if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+          break;
+        }
+
+        if (!this.board[next_row][next_col].isEmpty) {
+          if (this.board[next_row][next_col].piece === king) {
+            // if we get back to the king juste continue to look for bishop or queen
+            continue;
+          }
+          if (
+            king.color !== this.board[next_row][next_col].piece?.color &&
+            ["Q", "B"].includes(this.board[next_row][next_col].piece.code)
+          ) {
+            return false;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  noQueenOrRookTargetingThisCellForKing(king: IPiece, from: Cell): boolean {
+    const directions = [
+      [0, -1],
+      [0, 1],
+      [1, 0],
+      [-1, 0],
+    ];
+    for (const [dx, dy] of directions) {
+      let next_row = from.row;
+      let next_col = from.column;
+      while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
+        next_row += dy;
+        next_col += dx;
+
+        if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+          break;
+        }
+
+        if (!this.board[next_row][next_col].isEmpty) {
+          if (this.board[next_row][next_col].piece === king) {
+            continue;
+          }
+
+          if (
+            king.color !== this.board[next_row][next_col].piece?.color &&
+            ["Q", "R"].includes(this.board[next_row][next_col].piece.code)
+          ) {
+            return false;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  noPawnTargetingThisCellForKing(color: Color, from: Cell): boolean {
+    const directions =
+      color === "white"
+        ? [
+            [1, -1],
+            [-1, -1],
+          ]
+        : [
+            [-1, 1],
+            [1, 1],
+          ];
+
+    for (const [dx, dy] of directions) {
+      const next_row = from.row + dy;
+      const next_col = from.column + dx;
+      if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+        continue;
+      }
+
+      if (
+        !this.board[next_row][next_col].isEmpty &&
+        this.board[next_row][next_col].piece?.code === "P" &&
+        color !== this.board[next_row][next_col].piece?.color
+      ) {
+        return false;
+      }
+    }
+
     return true;
   }
 }
