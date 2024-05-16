@@ -237,7 +237,15 @@ export default class Game {
       movingPieceTo
     );
   }
-
+  /**
+   *  return false if the king is in danger targeting by a piece with one move by direction, after a move of the piece of same color
+   * @param directions all possible direction from witch the king can get targeting by the piece
+   * @param code the code of the piece targeting
+   * @param kingCell Cell where the king is after the move
+   * @param movingPieceFrom Cell where the piece is before the move
+   * @param movingPieceTo Cell where the piece is before the after the move
+   * @returns
+   */
   noPieceWhiteOneMoveByDirection(
     directions: number[][],
     code: string,
@@ -272,6 +280,15 @@ export default class Game {
     return true;
   }
 
+  /**
+   *  return false if the king is in danger targeting by a piece with many move by direction, after a move of the piece of same color
+   * @param directions all possible direction from witch the king can get targeting by the piece
+   * @param code the code of the piece targeting
+   * @param kingCell Cell where the king is after the move
+   * @param movingPieceFrom Cell where the piece is before the move
+   * @param movingPieceTo Cell where the piece is before the after the move
+   * @returns
+   */
   noPieceWhiteManyMovesByDirection(
     directions: number[][],
     code: string[],
