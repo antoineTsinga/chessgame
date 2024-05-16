@@ -82,7 +82,21 @@ export default class Game {
     return false;
   }
   isPat(): boolean {
-    return false;
+    let onePieceCanMoveP1 = false;
+
+    this.leftPieceTo(this.player1).map((cell) => {
+      onePieceCanMoveP1 = onePieceCanMoveP1 || this.canMove(cell);
+      return 0;
+    });
+
+    let onePieceCanMoveP2 = false;
+
+    this.leftPieceTo(this.player2).map((cell) => {
+      onePieceCanMoveP2 = onePieceCanMoveP2 || this.canMove(cell);
+      return 0;
+    });
+
+    return !onePieceCanMoveP1 || !onePieceCanMoveP2;
   }
 
   takeEnPassant(from: Cell, to: Cell): void {

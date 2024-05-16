@@ -35,12 +35,15 @@ const Board: React.FC<BoardProps> = ({ game }) => {
     //setMoveMakeFrom(prevCell);
     game.movePieceFromCellTo(prevCell, to);
     if (game.isInCheck(game.whoPlay)) {
-      setCheckMessage(`${game.whoPlay.color} King in Check`);
+      setCheckMessage(`${game.whoPlay.color} King in Check !😰`);
 
       if (game.isCheckMat(game.whoPlay)) {
-        setCheckMessage(`${game.whoPlay.color} King is CheckMate`);
+        setCheckMessage(`${game.whoPlay.color} King is CheckMate !!! ☠️`);
       }
     } else {
+      if (game.isPat()) {
+        setCheckMessage("It's a pat !");
+      }
       setCheckMessage("");
     }
 

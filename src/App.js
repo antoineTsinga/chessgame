@@ -8,7 +8,7 @@ function App() {
   game.player2.name = "player2";
   return (
     <div className="App">
-      <Login />
+      {/* <Login /> */}
       <Board game={game} />
     </div>
   );
