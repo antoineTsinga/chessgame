@@ -14,7 +14,7 @@ export default class Game {
   isGameStart: boolean = false;
   winner: Player | null = null;
   turn: number = 1;
-  whoPlay: Player | null;
+  whoPlay: Player;
   takePieces: IPiece[];
   kingPos: { white: [number, number]; black: [number, number] } = {
     white: [7, 4],
@@ -26,6 +26,7 @@ export default class Game {
     const random = Math.round(Math.random());
     this.player1.color = color[random];
     this.player1.name = namePlayer1;
+    this.player2.color = color[1 - random];
 
     this.whoPlay = random === 0 ? this.player1 : this.player2;
     this.hostCode = Math.random().toString();
@@ -37,16 +38,44 @@ export default class Game {
     return (
       this.isCheckMat(this.player1) ||
       this.isCheckMat(this.player2) ||
-      this.isPat()
+      this.isNull()
     );
   }
 
-  isCheckMat(player1: Player): boolean {
+  getkingCell(color: Color): Cell {
+    console.log(color);
+    const kingCell = this.board[this.kingPos[color][0]][this.kingPos[color][1]];
+    return kingCell;
+  }
+
+  isCheckMat(player: Player): boolean {
     return false;
   }
 
+  isNull(): boolean {
+    return false;
+  }
   isPat(): boolean {
     return false;
+  }
+
+  isInCheck(player: Player): boolean {
+    const kingCell: Cell = this.getkingCell(player.color);
+    return (
+      !this.noQueenOrBishopTargetingThisCellForKing(
+        kingCell,
+        kingCell,
+        kingCell
+      ) ||
+      !this.noQueenOrRookTargetingThisCellForKing(
+        kingCell,
+        kingCell,
+        kingCell
+      ) ||
+      !this.noPawnTargetingThisCellForKing(kingCell, kingCell, kingCell) ||
+      !this.noKnightTargetingThisCellForKing(kingCell, kingCell, kingCell) ||
+      !this.noKingTargetingThisCellForKing(kingCell, kingCell, kingCell)
+    );
   }
 
   possibleMoveFrom(cell: Cell) {
@@ -75,6 +104,7 @@ export default class Game {
     }
 
     from.movePieceTo(to);
+    this.whoPlay = this.whoPlay === this.player1 ? this.player2 : this.player1;
     if (to.piece?.code === "K") {
       this.kingPos[to.piece.color] = [to.row, to.column];
     }
@@ -102,7 +132,8 @@ export default class Game {
         this.noQueenOrBishopTargetingThisCellForKing(to, from, to) &&
         this.noQueenOrRookTargetingThisCellForKing(to, from, to) &&
         this.noPawnTargetingThisCellForKing(to, from, to) &&
-        this.noKnightTargetingThisCellForKing(to, from, to)
+        this.noKnightTargetingThisCellForKing(to, from, to) &&
+        this.noKingTargetingThisCellForKing(to, from, to)
       );
     } else {
       //check if move a piece don't put the king in danger
@@ -237,6 +268,30 @@ export default class Game {
       movingPieceTo
     );
   }
+  noKingTargetingThisCellForKing(
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
+    const directions = [
+      [1, 1],
+      [1, -1],
+      [-1, 1],
+      [-1, -1],
+      [0, 1],
+      [0, -1],
+      [-1, 0],
+      [1, 0],
+    ];
+
+    return this.noPieceWhiteOneMoveByDirection(
+      directions,
+      "K",
+      kingCell,
+      movingPieceFrom,
+      movingPieceTo
+    );
+  }
   /**
    *  return false if the king is in danger targeting by a piece with one move by direction, after a move of the piece of same color
    * @param directions all possible direction from witch the king can get targeting by the piece
@@ -266,7 +321,6 @@ export default class Game {
           continue;
         }
 
-        console.log(kingCell, [next_row, next_col]);
         if (
           this.board[next_row][next_col].piece?.code === code &&
           movingPieceFrom.piece?.color !==

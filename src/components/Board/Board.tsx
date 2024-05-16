@@ -33,6 +33,7 @@ const Board: React.FC<BoardProps> = ({ game }) => {
     setPossibleMoves([]);
     //setMoveMakeFrom(prevCell);
     game.movePieceFromCellTo(prevCell, to);
+    game.isInCheck(game.whoPlay);
     setPrevCell(null);
   };
 
@@ -42,6 +43,9 @@ const Board: React.FC<BoardProps> = ({ game }) => {
     if (prevCell && !prevCell.isEmpty) {
       makeMove(cell);
     } else {
+      if (game.whoPlay.color !== cell.piece?.color) {
+        return;
+      }
       showPosibleMove(cell);
     }
   };
