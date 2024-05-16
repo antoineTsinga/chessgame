@@ -43,7 +43,6 @@ export default class Game {
   }
 
   getkingCell(color: Color): Cell {
-    console.log(color);
     const kingCell = this.board[this.kingPos[color][0]][this.kingPos[color][1]];
     return kingCell;
   }
@@ -57,6 +56,13 @@ export default class Game {
   }
   isPat(): boolean {
     return false;
+  }
+
+  takeEnPassant(from: Cell, to: Cell): void {
+    console.log("ici");
+    this.board[(from.row + to.row) / 2][to.column].piece = from.piece;
+    from.piece = null;
+    to.piece = null;
   }
 
   isInCheck(player: Player): boolean {
@@ -85,6 +91,14 @@ export default class Game {
     }
     let possibleMoves = cell.piece?.getPossiblesMove(cell, this.board);
 
+    if (cell.piece.enPassant) {
+      const cellEnPassant =
+        this.board[(cell.row + cell.piece.enPassant.row) / 2][
+          cell.piece.enPassant.column
+        ];
+      possibleMoves.push(cellEnPassant);
+    }
+
     possibleMoves = possibleMoves?.filter((to) =>
       this.kingIsSafeWhenPieceMoveFromTo(cell, to)
     );
@@ -93,22 +107,58 @@ export default class Game {
   }
 
   movePieceFromCellTo(from: Cell, to: Cell): boolean {
-    let possibleMoves = from.piece?.getPossiblesMove(from, this.board);
-
-    possibleMoves = possibleMoves?.filter((to) =>
-      this.kingIsSafeWhenPieceMoveFromTo(from, to)
-    );
+    const possibleMoves = this.possibleMoveFrom(from);
 
     if (from.piece == null || !possibleMoves?.includes(to)) {
       return false;
     }
 
-    from.movePieceTo(to);
+    if (from.piece.code === "P") {
+      this.makePawnMove(from, to);
+    } else if (
+      from.piece.code === "K" &&
+      Math.abs(from.column - to.column) === 2
+    ) {
+      //roque
+      this.makeRoqueMove(from, to);
+    } else {
+      from.movePieceTo(to);
+    }
+
     this.whoPlay = this.whoPlay === this.player1 ? this.player2 : this.player1;
     if (to.piece?.code === "K") {
       this.kingPos[to.piece.color] = [to.row, to.column];
     }
     return true;
+  }
+
+  makePawnMove(from: Cell, to: Cell) {
+    if (
+      (from.row === 6 && to.row === 4) || // some pieces can possibly make an enpassant
+      (from.row === 1 && to.row === 3)
+    ) {
+      from.piece?.getNeighbors(this.board, to.row, to.column).map((cell) => {
+        //add possible move to adjacent pawn
+        cell.piece.enPassant = this.board[from.row][from.column];
+      });
+    }
+    if (from.piece?.enPassant === to) {
+      this.takeEnPassant(from, to);
+    } else {
+      //after a move enPassent can no longer be possible to the same pawn
+      from.piece.enPassant = null;
+      from.movePieceTo(to);
+    }
+  }
+
+  makeRoqueMove(from: Cell, to: Cell) {
+    from.movePieceTo(to);
+    if (to.column === 6) {
+      this.board[from.row][7].movePieceTo(this.board[from.row][5]);
+    }
+    if (to.column === 2) {
+      this.board[from.row][0].movePieceTo(this.board[from.row][3]);
+    }
   }
 
   reMatch(): void {

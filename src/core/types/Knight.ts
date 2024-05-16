@@ -9,11 +9,15 @@ export default class Knight implements IPiece {
   name: string = "Knight";
   code: string = "N";
   value: number = 3;
+  enPassant: Cell | null;
 
   constructor(color: Color, img: string) {
     this.color = color;
     this.img = img;
     this.isFirstMove = true;
+  }
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    return [];
   }
 
   getPossiblesMove(from: Cell, board: BoardType): Cell[] {

@@ -9,10 +9,14 @@ export default class Queen implements IPiece {
   name: string = "Queen";
   code: string = "Q";
   value: number = 10;
+  enPassant: Cell | null;
 
   constructor(color: Color, img: string) {
     this.color = color;
     this.img = img;
+  }
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    return [];
   }
 
   getPossiblesMove(from: Cell, board: BoardType): Cell[] {

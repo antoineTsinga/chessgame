@@ -9,10 +9,15 @@ export default class Bishop implements IPiece {
   name: string = "Bishop";
   code: string = "B";
   value: number = 3;
+  enPassant: Cell | null;
 
   constructor(color: Color, img: string) {
     this.color = color;
     this.img = img;
+  }
+
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    return [];
   }
 
   getPossiblesMove(from: Cell, board: BoardType): Cell[] {

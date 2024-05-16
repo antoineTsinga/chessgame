@@ -8,6 +8,8 @@ export default interface IPiece {
   name: string;
   code: string;
   value: number;
+  enPassant: Cell | null;
 
   getPossiblesMove(from: Cell, board: BoardType): Cell[];
+  getNeighbors(board: BoardType, row: number, col: number): Cell[];
 }

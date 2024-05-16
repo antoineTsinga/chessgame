@@ -9,10 +9,14 @@ export default class Rook implements IPiece {
   name: string = "Rook";
   code: string = "R";
   value: number = 5;
+  enPassant: Cell | null;
 
   constructor(color: Color, img: string) {
     this.color = color;
     this.img = img;
+  }
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    return [];
   }
 
   isfirstMove: boolean;

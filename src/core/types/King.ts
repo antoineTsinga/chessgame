@@ -9,11 +9,16 @@ export default class King implements IPiece {
   name: string = "King";
   code: string = "K";
   value: number = 0;
+  enPassant: Cell | null;
 
   constructor(color: Color, img: string) {
     this.color = color;
     this.img = img;
   }
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    return [];
+  }
+
   isfirstMove: boolean;
 
   getPossiblesMove(from: Cell, board: BoardType): Cell[] {

@@ -15,6 +15,7 @@ const Board: React.FC<BoardProps> = ({ game }) => {
   const [moveMakeFrom, setMoveMakeFrom] = useState<Cell | null>(null);
 
   const showPosibleMove = (from: Cell) => {
+    //console.log("piece", from);
     setPossibleMoves(game.possibleMoveFrom(from));
     setPrevCell(from);
   };
