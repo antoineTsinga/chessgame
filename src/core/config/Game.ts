@@ -59,6 +59,7 @@ export default class Game {
   }
 
   takeEnPassant(from: Cell, to: Cell): void {
+    from.piece.enPassant = null;
     to.piece = from.piece;
     this.board[from.row][to.column].piece = null;
     from.piece = null;
@@ -90,7 +91,7 @@ export default class Game {
     }
     let possibleMoves = cell.piece?.getPossiblesMove(cell, this.board);
 
-    if (cell.piece.enPassant) {
+    if (cell.piece.enPassant != null) {
       const cellEnPassant =
         this.board[(cell.row + cell.piece.enPassant.row) / 2][
           cell.piece.enPassant.column
