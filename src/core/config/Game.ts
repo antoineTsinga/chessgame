@@ -59,10 +59,9 @@ export default class Game {
   }
 
   takeEnPassant(from: Cell, to: Cell): void {
-    console.log("ici");
-    this.board[(from.row + to.row) / 2][to.column].piece = from.piece;
+    to.piece = from.piece;
+    this.board[from.row][to.column].piece = null;
     from.piece = null;
-    to.piece = null;
   }
 
   isInCheck(player: Player): boolean {
@@ -142,7 +141,11 @@ export default class Game {
         cell.piece.enPassant = this.board[from.row][from.column];
       });
     }
-    if (from.piece?.enPassant === to) {
+    if (
+      from.piece?.enPassant &&
+      this.board[to.row][from.piece?.enPassant.column] === to
+    ) {
+      console.log("En passant");
       this.takeEnPassant(from, to);
     } else {
       //after a move enPassent can no longer be possible to the same pawn
@@ -154,10 +157,14 @@ export default class Game {
   makeRoqueMove(from: Cell, to: Cell) {
     from.movePieceTo(to);
     if (to.column === 6) {
-      this.board[from.row][7].movePieceTo(this.board[from.row][5]);
+      //"small roque"
+      this.board[from.row][5].piece = this.board[from.row][7].piece;
+      this.board[from.row][7].piece = null;
     }
     if (to.column === 2) {
-      this.board[from.row][0].movePieceTo(this.board[from.row][3]);
+      //"big roque"
+      this.board[from.row][3].piece = this.board[from.row][0].piece;
+      this.board[from.row][0].piece = null;
     }
   }
 
