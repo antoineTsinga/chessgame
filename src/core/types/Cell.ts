@@ -17,7 +17,6 @@ export default class Cell {
 
   movesPossible(): Cell[] {
     if (this.piece == null) {
-      console.log("empty piece");
       return [];
     }
     return this.piece.getPossiblesMove(this, this.board);

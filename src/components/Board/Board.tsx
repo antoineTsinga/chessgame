@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Board.css";
 
 import Cell from "../../core/types/Cell.ts";
@@ -13,9 +13,9 @@ const Board: React.FC<BoardProps> = ({ game }) => {
   const [prevCell, setPrevCell] = useState<Cell | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]);
   const [moveMakeFrom, setMoveMakeFrom] = useState<Cell | null>(null);
+  const [checkMessage, setCheckMessage] = useState<string>("");
 
   const showPosibleMove = (from: Cell) => {
-    //console.log("piece", from);
     setPossibleMoves(game.possibleMoveFrom(from));
     setPrevCell(from);
   };
@@ -34,7 +34,16 @@ const Board: React.FC<BoardProps> = ({ game }) => {
     setPossibleMoves([]);
     //setMoveMakeFrom(prevCell);
     game.movePieceFromCellTo(prevCell, to);
-    game.isInCheck(game.whoPlay);
+    if (game.isInCheck(game.whoPlay)) {
+      setCheckMessage(`${game.whoPlay.color} King in Check`);
+
+      if (game.isCheckMat(game.whoPlay)) {
+        setCheckMessage(`${game.whoPlay.color} King is CheckMate`);
+      }
+    } else {
+      setCheckMessage("");
+    }
+
     setPrevCell(null);
   };
 
@@ -53,6 +62,7 @@ const Board: React.FC<BoardProps> = ({ game }) => {
 
   return (
     <div className="container">
+      <h1>{checkMessage}</h1>
       <div className="board">
         {game.board.map((row, i) =>
           row.map((cell, j) => (

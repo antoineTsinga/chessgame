@@ -106,12 +106,8 @@ export default class Pawn implements IPiece {
       board[row][col - 1].piece?.color !== this.color &&
       board[row][col - 1].piece?.code === "P"
     ) {
-      console.log("Mon voisin est ", board[row][col - 1]);
-
       neighbors.push(board[row][col - 1]);
     }
-
-    console.log("list", neighbors);
 
     return neighbors;
   }

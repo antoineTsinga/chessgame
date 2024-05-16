@@ -48,7 +48,34 @@ export default class Game {
   }
 
   isCheckMat(player: Player): boolean {
-    return false;
+    let onePieceCanMove = false;
+
+    this.leftPieceTo(player).map((cell) => {
+      onePieceCanMove = onePieceCanMove || this.canMove(cell);
+      return 0;
+    });
+    return this.isInCheck(player) && !onePieceCanMove;
+  }
+
+  canMove(cell: Cell): boolean {
+    const possibleMoves = this.possibleMoveFrom(cell);
+    return possibleMoves.length > 0;
+  }
+
+  leftPieceTo(player: Player): Cell[] {
+    const leftPieces: Cell[] = [];
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        if (
+          this.board[i][j].piece &&
+          this.board[i][j].piece?.color === player.color
+        ) {
+          leftPieces.push(this.board[i][j]);
+        }
+      }
+    }
+
+    return leftPieces;
   }
 
   isNull(): boolean {
@@ -86,7 +113,6 @@ export default class Game {
 
   possibleMoveFrom(cell: Cell) {
     if (cell.piece == null) {
-      console.log("empty piece");
       return [];
     }
     let possibleMoves = cell.piece?.getPossiblesMove(cell, this.board);
@@ -146,7 +172,6 @@ export default class Game {
       from.piece?.enPassant &&
       this.board[to.row][from.piece?.enPassant.column] === to
     ) {
-      console.log("En passant");
       this.takeEnPassant(from, to);
     } else {
       //after a move enPassent can no longer be possible to the same pawn
