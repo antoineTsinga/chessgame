@@ -92,6 +92,33 @@ const Board: React.FC<BoardProps> = ({ game }) => {
           ))
         )}
       </div>
+
+      {game.toPromote ? (
+        <div className="promotion">
+          <img
+            className="piece"
+            src={`/images/pions/N${game.toPromote.color.charAt(0)}.png`}
+            alt={"Knight"}
+          />
+          <img
+            className="piece"
+            src={`/images/pions/B${game.toPromote.color.charAt(0)}.png`}
+            alt={"Bishop"}
+          />
+          <img
+            className="piece"
+            src={`/images/pions/R${game.toPromote.color.charAt(0)}.png`}
+            alt={"Rook"}
+          />
+          <img
+            className="piece"
+            src={`/images/pions/Q${game.toPromote.color.charAt(0)}.png`}
+            alt={"Queen"}
+          />
+        </div>
+      ) : (
+        <></>
+      )}
     </div>
   );
 };

@@ -9,13 +9,16 @@ export default class Game {
   player2: Player = new Player();
   hostCode: string;
   board: BoardType;
-  history: string[];
+  history: string[] = [];
   gameOver: boolean = false;
   isGameStart: boolean = false;
   winner: Player | null = null;
   turn: number = 1;
   whoPlay: Player;
+  toPromote: Cell | null = null;
+  LastFiftyMoveWithoutTake: number[] = [];
   takePieces: IPiece[];
+
   kingPos: { white: [number, number]; black: [number, number] } = {
     white: [7, 4],
     black: [0, 4],
@@ -87,12 +90,49 @@ export default class Game {
     return leftPieces;
   }
 
+  totalLeftPieces() {
+    return (
+      this.leftPieceTo(this.player1).length +
+      this.leftPieceTo(this.player2).length
+    );
+  }
+
   isNull(): boolean {
-    return false;
+    return (
+      this.isPat() ||
+      this.notEnougthMaterial() ||
+      this.isRepetition() ||
+      this.isFiftyMoveWithoutTake()
+    );
   }
   isPat(): boolean {
     return (
       this.noPieceCanMove(this.player1) || this.noPieceCanMove(this.player2)
+    );
+  }
+
+  notEnougthMaterial(): boolean {
+    const notEnougthMaterials: (string | undefined)[] = [
+      "K",
+      "KN",
+      "NK",
+      "KB",
+      "BK",
+    ];
+
+    const leftPiecesPlayer1 = this.leftPieceTo(this.player1).map(
+      (cell) => cell.piece?.code
+    );
+
+    const leftPiecesPlayer2 = this.leftPieceTo(this.player2).map(
+      (cell) => cell.piece?.code
+    );
+
+    console.log(leftPiecesPlayer1, leftPiecesPlayer2);
+
+    return (
+      notEnougthMaterials.includes(leftPiecesPlayer1.join("")) &&
+      notEnougthMaterials.includes(leftPiecesPlayer2.join(""))
     );
   }
 
@@ -120,6 +160,42 @@ export default class Game {
       !this.noKnightTargetingThisCellForKing(kingCell, kingCell, kingCell) ||
       !this.noKingTargetingThisCellForKing(kingCell, kingCell, kingCell)
     );
+  }
+
+  isRepetition(): boolean {
+    const state: string = this.stringifyBoard();
+    const repetitions = this.history.filter(
+      (position) => position === state
+    ).length;
+
+    return repetitions >= 3; //there are already 2 states equal to the current state in history so it's repetion
+  }
+
+  stringifyBoard(): string {
+    return JSON.stringify(
+      this.board.map((rows) =>
+        rows.map((cell) => {
+          if (cell.isEmpty) {
+            return "X";
+          } else {
+            return cell.piece?.code;
+          }
+        })
+      )
+    );
+  }
+
+  isFiftyMoveWithoutTake(): boolean {
+    return (
+      this.LastFiftyMoveWithoutTake.length >= 50 &&
+      this.LastFiftyMoveWithoutTake.filter(
+        (leftPiece) => leftPiece !== this.LastFiftyMoveWithoutTake[0]
+      ).length === 0
+    );
+  }
+
+  changeTurn() {
+    this.whoPlay = this.whoPlay === this.player1 ? this.player2 : this.player1;
   }
 
   possibleMoveFrom(cell: Cell) {
@@ -162,8 +238,21 @@ export default class Game {
       from.movePieceTo(to);
     }
 
-    this.whoPlay = this.whoPlay === this.player1 ? this.player2 : this.player1;
+    if (
+      this.LastFiftyMoveWithoutTake.length > 0 &&
+      this.LastFiftyMoveWithoutTake[0] === this.totalLeftPieces()
+    ) {
+      this.LastFiftyMoveWithoutTake.push(this.totalLeftPieces());
+    } else {
+      this.LastFiftyMoveWithoutTake = [this.totalLeftPieces()];
+    }
+
+    this.history.push(this.stringifyBoard());
+
+    this.changeTurn(); //change turn
+
     if (to.piece?.code === "K") {
+      //update king position
       this.kingPos[to.piece.color] = [to.row, to.column];
     }
     return true;
@@ -189,6 +278,10 @@ export default class Game {
       from.piece.enPassant = null;
       from.movePieceTo(to);
     }
+
+    if (to.row === 0 || to.row === 7) {
+      this.toPromote = to;
+    }
   }
 
   makeRoqueMove(from: Cell, to: Cell) {
@@ -213,6 +306,7 @@ export default class Game {
     this.turn = 1;
     this.history = [];
     this.takePieces = [];
+    this.LastFiftyMoveWithoutTake = [];
   }
 
   kingIsSafeWhenPieceMoveFromTo(from: Cell, to: Cell): boolean {
