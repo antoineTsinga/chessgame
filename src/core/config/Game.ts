@@ -16,6 +16,10 @@ export default class Game {
   turn: number = 1;
   whoPlay: Player | null;
   takePieces: IPiece[];
+  kingPos: { white: [number, number]; black: [number, number] } = {
+    white: [7, 4],
+    black: [0, 4],
+  };
 
   constructor(namePlayer1: string) {
     const color: { 0: Color; 1: Color } = { 0: "white", 1: "black" };
@@ -71,6 +75,9 @@ export default class Game {
     }
 
     from.movePieceTo(to);
+    if (to.piece?.code === "K") {
+      this.kingPos[to.piece.color] = [to.row, to.column];
+    }
     return true;
   }
 
@@ -85,27 +92,50 @@ export default class Game {
   }
 
   kingIsSafeWhenPieceMoveFromTo(from: Cell, to: Cell): boolean {
+    const kingCell =
+      this.board[this.kingPos[from.piece.color][0]][
+        this.kingPos[from.piece.color][1]
+      ];
     if (from.piece?.code === "K") {
       return (
-        this.noQueenOrBishopTargetingThisCellForKing(from.piece, to) &&
-        this.noQueenOrRookTargetingThisCellForKing(from.piece, to) &&
-        this.noPawnTargetingThisCellForKing(from.piece.color, to)
+        this.noQueenOrBishopTargetingThisCellForKing(to, from, to) &&
+        this.noQueenOrRookTargetingThisCellForKing(to, from, to) &&
+        this.noPawnTargetingThisCellForKing(from.piece.color, to) &&
+        this.noKnightTargetingThisCellForKing(from.piece.color, to)
       );
     } else {
+      //console.log("pos", this.kingPos[from.piece.color]);
+
+      return (
+        this.noQueenOrBishopTargetingThisCellForKing(kingCell, from, to) &&
+        this.noQueenOrRookTargetingThisCellForKing(kingCell, from, to)
+      );
     }
-    return true;
   }
 
-  noQueenOrBishopTargetingThisCellForKing(king: IPiece, from: Cell): boolean {
+  /**
+   * return false if after the move the king is in danger targeting by a bishop or a queen
+   * @param kingCell Cell where the king is after the move
+   * @param movingPieceFrom Cell where the piece is before the move
+   * @param movingPieceTo Cell where the piece is before the after the move
+   * @returns
+   */
+
+  noQueenOrBishopTargetingThisCellForKing(
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
     const directions = [
       [1, -1],
       [-1, 1],
       [1, 1],
       [-1, -1],
     ];
+
     for (const [dx, dy] of directions) {
-      let next_row = from.row;
-      let next_col = from.column;
+      let next_row = kingCell.row;
+      let next_col = kingCell.column;
       while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
         next_row += dy;
         next_col += dx;
@@ -115,16 +145,23 @@ export default class Game {
         }
 
         if (!this.board[next_row][next_col].isEmpty) {
-          if (this.board[next_row][next_col].piece === king) {
-            // if we get back to the king juste continue to look for bishop or queen
+          if (this.board[next_row][next_col] === movingPieceFrom) {
+            // we supose that the piece had moved and there is no piece there
             continue;
           }
+
           if (
-            king.color !== this.board[next_row][next_col].piece?.color &&
+            movingPieceFrom.piece.color !==
+              this.board[next_row][next_col].piece?.color &&
             ["Q", "B"].includes(this.board[next_row][next_col].piece.code)
           ) {
             return false;
           } else {
+            break;
+          }
+        } else {
+          if (this.board[next_row][next_col] === movingPieceTo) {
+            // New position cover the king
             break;
           }
         }
@@ -133,7 +170,18 @@ export default class Game {
     return true;
   }
 
-  noQueenOrRookTargetingThisCellForKing(king: IPiece, from: Cell): boolean {
+  /**
+   * return false if after the move the king is in danger targeting by a rook or a queen
+   * @param kingCell Cell where the king is after the move
+   * @param movingPieceFrom Cell where the piece is before the move
+   * @param movingPieceTo Cell where the piece is before the after the move
+   * @returns
+   */
+  noQueenOrRookTargetingThisCellForKing(
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
     const directions = [
       [0, -1],
       [0, 1],
@@ -141,8 +189,8 @@ export default class Game {
       [-1, 0],
     ];
     for (const [dx, dy] of directions) {
-      let next_row = from.row;
-      let next_col = from.column;
+      let next_row = kingCell.row;
+      let next_col = kingCell.column;
       while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
         next_row += dy;
         next_col += dx;
@@ -152,16 +200,23 @@ export default class Game {
         }
 
         if (!this.board[next_row][next_col].isEmpty) {
-          if (this.board[next_row][next_col].piece === king) {
+          if (this.board[next_row][next_col] === movingPieceFrom) {
+            // we supose that the piece had moved and there is no piece there
             continue;
           }
 
           if (
-            king.color !== this.board[next_row][next_col].piece?.color &&
+            movingPieceFrom.piece.color !==
+              this.board[next_row][next_col].piece?.color &&
             ["Q", "R"].includes(this.board[next_row][next_col].piece.code)
           ) {
             return false;
           } else {
+            break;
+          }
+        } else {
+          if (this.board[next_row][next_col] === movingPieceTo) {
+            // New position cover the king
             break;
           }
         }
@@ -170,7 +225,14 @@ export default class Game {
     return true;
   }
 
-  noPawnTargetingThisCellForKing(color: Color, from: Cell): boolean {
+  /**
+   * Check if there are no Pawns targeting a cell where king can possibly move on
+   * @param color color of the king
+   * @param movingPieceTo cell where the king want to move on
+   * @returns
+   */
+
+  noPawnTargetingThisCellForKing(color: Color, movingPieceTo: Cell): boolean {
     const directions =
       color === "white"
         ? [
@@ -183,8 +245,8 @@ export default class Game {
           ];
 
     for (const [dx, dy] of directions) {
-      const next_row = from.row + dy;
-      const next_col = from.column + dx;
+      const next_row = movingPieceTo.row + dy;
+      const next_col = movingPieceTo.column + dx;
       if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
         continue;
       }
@@ -193,6 +255,44 @@ export default class Game {
         !this.board[next_row][next_col].isEmpty &&
         this.board[next_row][next_col].piece?.code === "P" &&
         color !== this.board[next_row][next_col].piece?.color
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if there are no Knight targeting a cell where king can possibly move on
+   * @param color color of the king
+   * @param movingPieceTo cell where the king want to move on
+   * @returns
+   */
+
+  noKnightTargetingThisCellForKing(color: Color, movingPieceTo: Cell): boolean {
+    const directions = [
+      [2, 1],
+      [2, -1],
+      [1, 2],
+      [1, -2],
+      [-2, 1],
+      [-2, -1],
+      [-1, 2],
+      [-1, -2],
+    ];
+
+    for (const [dx, dy] of directions) {
+      const next_row = movingPieceTo.row + dy;
+      const next_col = movingPieceTo.column + dx;
+      if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+        continue;
+      }
+
+      if (
+        !this.board[next_row][next_col].isEmpty &&
+        color !== this.board[next_row][next_col].piece?.color &&
+        this.board[next_row][next_col].piece?.code === "N"
       ) {
         return false;
       }
