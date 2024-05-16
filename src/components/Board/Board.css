@@ -70,3 +70,24 @@
   background-color: rgba(12, 41, 12, 0.518) !important;
   border-radius: 50%;
 }
+
+.promotion{
+  width: 30%;
+  position: absolute;
+  display: flex;
+  background-color: rgb(110, 27, 159);
+  box-shadow: 0 0 10px;
+  border-radius: 5px;
+}
+
+.promotion .piece{
+  width: 25%;
+  transition: ease-in-out;
+}
+
+.promotion .piece:hover{
+  width: 25%;
+  background-color: rgb(43, 43, 39);
+  border-radius: 5px;
+  
+}

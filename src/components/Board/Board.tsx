@@ -3,6 +3,11 @@ import "./Board.css";
 
 import Cell from "../../core/types/Cell.ts";
 import Game from "../../core/config/Game.ts";
+import Knight from "../../core/types/Knight.ts";
+import Bishop from "../../core/types/Bishop.ts";
+import Rook from "../../core/types/Rook.ts";
+import Queen from "../../core/types/Queen.ts";
+import IPiece from "../../core/types/IPiece.ts";
 
 interface BoardProps {
   game: Game;
@@ -14,6 +19,7 @@ const Board: React.FC<BoardProps> = ({ game }) => {
   const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]);
   const [moveMakeFrom, setMoveMakeFrom] = useState<Cell | null>(null);
   const [checkMessage, setCheckMessage] = useState<string>("");
+  const [promotionModale, setPromotionModale] = useState<boolean>(false);
 
   const showPosibleMove = (from: Cell) => {
     setPossibleMoves(game.possibleMoveFrom(from));
@@ -34,19 +40,6 @@ const Board: React.FC<BoardProps> = ({ game }) => {
     setPossibleMoves([]);
     //setMoveMakeFrom(prevCell);
     game.movePieceFromCellTo(prevCell, to);
-    if (game.isInCheck(game.whoPlay)) {
-      setCheckMessage(`${game.whoPlay.color} King in Check !😰`);
-
-      if (game.isCheckMat(game.whoPlay)) {
-        setCheckMessage(`${game.whoPlay.color} King is CheckMate !!! ☠️`);
-      }
-    } else {
-      if (game.isPat()) {
-        setCheckMessage("It's a pat !");
-      } else {
-        setCheckMessage("");
-      }
-    }
 
     setPrevCell(null);
   };
@@ -62,6 +55,41 @@ const Board: React.FC<BoardProps> = ({ game }) => {
       }
       showPosibleMove(cell);
     }
+  };
+
+  useEffect(() => {
+    if (game.toPromote) setPromotionModale(true);
+  }, [current]);
+  const getImage = (type: string, colorChar0: string) =>
+    `/images/pions/${type + colorChar0}.png`;
+
+  const setPromotion = (cell: Cell | null, code: string) => {
+    if (!cell || !cell.piece || !game.toPromote) return;
+
+    const color = cell.piece.color;
+    console.log(cell);
+    switch (code) {
+      case "N":
+        cell.piece = new Knight(color, getImage("N", color.charAt(0)));
+        console.log("N");
+        break;
+
+      case "B":
+        cell.piece = new Bishop(color, getImage("B", color.charAt(0)));
+        console.log("B");
+        break;
+
+      case "R":
+        cell.piece = new Rook(color, getImage("R", color.charAt(0)));
+        console.log("R");
+        break;
+      case "Q":
+        cell.piece = new Queen(color, getImage("Q", color.charAt(0)));
+        console.log("Q");
+        break;
+    }
+    game.toPromote = null;
+    setPromotionModale(false);
   };
 
   return (
@@ -93,27 +121,31 @@ const Board: React.FC<BoardProps> = ({ game }) => {
         )}
       </div>
 
-      {game.toPromote ? (
+      {promotionModale && game.toPromote && game.toPromote.piece ? (
         <div className="promotion">
           <img
             className="piece"
-            src={`/images/pions/N${game.toPromote.color.charAt(0)}.png`}
+            src={`/images/pions/N${game.toPromote.piece.color.charAt(0)}.png`}
             alt={"Knight"}
+            onClick={() => setPromotion(game.toPromote, "N")}
           />
           <img
             className="piece"
-            src={`/images/pions/B${game.toPromote.color.charAt(0)}.png`}
+            src={`/images/pions/B${game.toPromote.piece.color.charAt(0)}.png`}
             alt={"Bishop"}
+            onClick={() => setPromotion(game.toPromote, "B")}
           />
           <img
             className="piece"
-            src={`/images/pions/R${game.toPromote.color.charAt(0)}.png`}
+            src={`/images/pions/R${game.toPromote.piece.color.charAt(0)}.png`}
             alt={"Rook"}
+            onClick={() => setPromotion(game.toPromote, "R")}
           />
           <img
             className="piece"
-            src={`/images/pions/Q${game.toPromote.color.charAt(0)}.png`}
+            src={`/images/pions/Q${game.toPromote.piece.color.charAt(0)}.png`}
             alt={"Queen"}
+            onClick={() => setPromotion(game.toPromote, "Q")}
           />
         </div>
       ) : (
