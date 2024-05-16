@@ -10,8 +10,8 @@
 
 .board {
   margin: auto;
-  width: 80vh;
-  height: 80vh;
+  width: 100%;
+  aspect-ratio: 1;
   max-width: 800px;
   max-height: 800px;
   display: grid;
@@ -60,7 +60,7 @@
 }
 
 .cell-target-piece {
-  background-color: red !important;
+  background-color: rgb(222, 240, 85) !important;
 }
 
 .possible-moves {
