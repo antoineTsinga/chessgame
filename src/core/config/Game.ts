@@ -57,6 +57,15 @@ export default class Game {
     return this.isInCheck(player) && !onePieceCanMove;
   }
 
+  noPieceCanMove(player: Player): boolean {
+    let noPieceCanMove = true;
+    this.leftPieceTo(player).forEach((cell) => {
+      noPieceCanMove = noPieceCanMove && !this.canMove(cell);
+    });
+
+    return noPieceCanMove;
+  }
+
   canMove(cell: Cell): boolean {
     const possibleMoves = this.possibleMoveFrom(cell);
     return possibleMoves.length > 0;
@@ -82,21 +91,9 @@ export default class Game {
     return false;
   }
   isPat(): boolean {
-    let onePieceCanMoveP1 = false;
-
-    this.leftPieceTo(this.player1).map((cell) => {
-      onePieceCanMoveP1 = onePieceCanMoveP1 || this.canMove(cell);
-      return 0;
-    });
-
-    let onePieceCanMoveP2 = false;
-
-    this.leftPieceTo(this.player2).map((cell) => {
-      onePieceCanMoveP2 = onePieceCanMoveP2 || this.canMove(cell);
-      return 0;
-    });
-
-    return !onePieceCanMoveP1 || !onePieceCanMoveP2;
+    return (
+      this.noPieceCanMove(this.player1) || this.noPieceCanMove(this.player2)
+    );
   }
 
   takeEnPassant(from: Cell, to: Cell): void {

@@ -43,8 +43,9 @@ const Board: React.FC<BoardProps> = ({ game }) => {
     } else {
       if (game.isPat()) {
         setCheckMessage("It's a pat !");
+      } else {
+        setCheckMessage("");
       }
-      setCheckMessage("");
     }
 
     setPrevCell(null);
