@@ -135,42 +135,13 @@ export default class Game {
       [-1, -1],
     ];
 
-    for (const [dx, dy] of directions) {
-      let next_row = kingCell.row;
-      let next_col = kingCell.column;
-      while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
-        next_row += dy;
-        next_col += dx;
-
-        if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
-          break;
-        }
-
-        if (!this.board[next_row][next_col].isEmpty) {
-          if (this.board[next_row][next_col] === movingPieceFrom) {
-            // we supose that the piece had moved and there is no piece there
-            continue;
-          } else if (this.board[next_row][next_col] === movingPieceTo) {
-            break;
-          }
-          if (
-            movingPieceFrom.piece.color !==
-              this.board[next_row][next_col].piece?.color &&
-            ["Q", "B"].includes(this.board[next_row][next_col].piece.code)
-          ) {
-            return false;
-          } else {
-            break;
-          }
-        } else {
-          if (this.board[next_row][next_col] === movingPieceTo) {
-            // New position cover the king
-            break;
-          }
-        }
-      }
-    }
-    return true;
+    return this.noPieceWhiteManyMovesByDirection(
+      directions,
+      ["B", "Q"],
+      kingCell,
+      movingPieceFrom,
+      movingPieceTo
+    );
   }
 
   /**
@@ -191,44 +162,14 @@ export default class Game {
       [1, 0],
       [-1, 0],
     ];
-    for (const [dx, dy] of directions) {
-      let next_row = kingCell.row;
-      let next_col = kingCell.column;
-      while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
-        next_row += dy;
-        next_col += dx;
 
-        if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
-          break;
-        }
-
-        if (!this.board[next_row][next_col].isEmpty) {
-          if (this.board[next_row][next_col] === movingPieceFrom) {
-            // we supose that the piece had moved and there is no piece there
-            continue;
-          } else if (this.board[next_row][next_col] === movingPieceTo) {
-            // piece can take to protege the king
-            break;
-          }
-
-          if (
-            movingPieceFrom.piece.color !==
-              this.board[next_row][next_col].piece?.color &&
-            ["Q", "R"].includes(this.board[next_row][next_col].piece.code)
-          ) {
-            return false;
-          } else {
-            break;
-          }
-        } else {
-          if (this.board[next_row][next_col] === movingPieceTo) {
-            // New position cover the king
-            break;
-          }
-        }
-      }
-    }
-    return true;
+    return this.noPieceWhiteManyMovesByDirection(
+      directions,
+      ["R", "Q"],
+      kingCell,
+      movingPieceFrom,
+      movingPieceTo
+    );
   }
 
   /**
@@ -328,6 +269,53 @@ export default class Game {
       }
     }
 
+    return true;
+  }
+
+  noPieceWhiteManyMovesByDirection(
+    directions: number[][],
+    code: string[],
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
+    for (const [dx, dy] of directions) {
+      let next_row = kingCell.row;
+      let next_col = kingCell.column;
+      while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
+        next_row += dy;
+        next_col += dx;
+
+        if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+          break;
+        }
+
+        if (!this.board[next_row][next_col].isEmpty) {
+          if (this.board[next_row][next_col] === movingPieceFrom) {
+            // we supose that the piece had moved and there is no piece there
+            continue;
+          } else if (this.board[next_row][next_col] === movingPieceTo) {
+            // piece can take to protege the king
+            break;
+          }
+
+          if (
+            movingPieceFrom.piece.color !==
+              this.board[next_row][next_col].piece?.color &&
+            code.includes(this.board[next_row][next_col].piece.code)
+          ) {
+            return false;
+          } else {
+            break;
+          }
+        } else {
+          if (this.board[next_row][next_col] === movingPieceTo) {
+            // New position cover the king
+            break;
+          }
+        }
+      }
+    }
     return true;
   }
 }
