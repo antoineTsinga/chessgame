@@ -13,15 +13,28 @@ export interface BoardProps {
 const PlayerInfo: React.FC<BoardProps> = ({ game, player }) => {
   const [active, setActive] = useState<boolean>(false);
   const [time, setTime] = useState<number>(game.timers[player.color]);
+  const [advantage, setAdvantage] = useState<number>(0);
 
+  const colortakenPieces: Color = player.color === "black" ? "white" : "black";
+  const adversaryColorTakenPieces: Color =
+    player.color !== "black" ? "white" : "black";
   useEffect(() => {
     if (time === 0) return;
-
     const intervalId = setInterval(() => {
       game.timers[player.color] = game.timers[player.color] - 1;
       setTime((prevSeconds) => prevSeconds - 1);
     }, 1000);
 
+    const point = game.takenPieces[colortakenPieces].reduce(
+      (p, p2) => p + p2.value,
+      0
+    );
+    const adversary = game.takenPieces[adversaryColorTakenPieces].reduce(
+      (p, p2) => p + p2.value,
+      0
+    );
+
+    setAdvantage(Math.max(0, point - adversary));
     if (game.whoPlay === player) {
       setActive(true);
     } else {
@@ -29,7 +42,15 @@ const PlayerInfo: React.FC<BoardProps> = ({ game, player }) => {
       clearInterval(intervalId);
     }
     return () => clearInterval(intervalId);
-  }, [game.timers, game.whoPlay, player]);
+  }, [
+    adversaryColorTakenPieces,
+    colortakenPieces,
+    game.takenPieces,
+    game.timers,
+    game.whoPlay,
+    player,
+    time,
+  ]);
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
@@ -39,7 +60,6 @@ const PlayerInfo: React.FC<BoardProps> = ({ game, player }) => {
     }${seconds}`;
   };
 
-  const colortakenPieces: Color = player.color === "black" ? "white" : "black";
   const printPiece = (code: string) => {
     let leftpixels = 20;
     return game.takenPieces[colortakenPieces]
@@ -68,6 +88,7 @@ const PlayerInfo: React.FC<BoardProps> = ({ game, player }) => {
           <div className="bishop relative">{printPiece("B")}</div>
           <div className="rook relative">{printPiece("R")}</div>
           <div className="queen relative">{printPiece("Q")}</div>
+          <span>{advantage > 0 && "+" + advantage}</span>
         </div>
       </div>
 
