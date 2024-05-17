@@ -17,8 +17,8 @@ export default class Game {
   whoPlay: Player;
   toPromote: Cell | null = null;
   LastFiftyMoveWithoutTake: number[] = [];
-  takePieces: IPiece[];
-
+  timers: { black: number; white: number } = { black: 600, white: 600 };
+  takenPieces: { black: IPiece[]; white: IPiece[] } = { black: [], white: [] };
   kingPos: { white: [number, number]; black: [number, number] } = {
     white: [7, 4],
     black: [0, 4],
@@ -37,12 +37,43 @@ export default class Game {
     this.board = createBoard();
   }
 
-  IsGameOver(): boolean {
+  getTimer(player: Player): number {
+    return this.timers[player.color];
+  }
+
+  isGameOver(): boolean {
     return (
       this.isCheckMat(this.player1) ||
       this.isCheckMat(this.player2) ||
       this.isNull()
     );
+  }
+  getWinner(): Player | null {
+    if (this.isCheckMat(this.player1)) return this.player1;
+    if (this.isCheckMat(this.player2)) return this.player2;
+    return null;
+  }
+
+  reMatch(): void {
+    if (this.player1.color === "black") {
+      this.player1.color = "white";
+      this.player2.color = "black";
+      this.whoPlay = this.player1;
+    } else {
+      this.player2.color = "white";
+      this.player1.color = "black";
+      this.whoPlay = this.player2;
+    }
+    this.board = createBoard();
+    this.gameOver = false;
+    this.history = [];
+    this.isGameStart = true;
+    this.winner = null;
+    this.turn = 1;
+    this.toPromote = null;
+    this.LastFiftyMoveWithoutTake = [];
+    this.takenPieces = { black: [], white: [] };
+    this.timers = { black: 600, white: 600 };
   }
 
   getkingCell(color: Color): Cell {
@@ -226,6 +257,10 @@ export default class Game {
       return false;
     }
 
+    if (to.piece) {
+      this.takenPieces[to.piece.color].push(to.piece);
+    }
+
     if (from.piece.code === "P") {
       this.makePawnMove(from, to);
     } else if (
@@ -296,17 +331,6 @@ export default class Game {
       this.board[from.row][3].piece = this.board[from.row][0].piece;
       this.board[from.row][0].piece = null;
     }
-  }
-
-  reMatch(): void {
-    this.board = createBoard();
-    this.gameOver = false;
-    this.isGameStart = true;
-    this.winner = null;
-    this.turn = 1;
-    this.history = [];
-    this.takePieces = [];
-    this.LastFiftyMoveWithoutTake = [];
   }
 
   kingIsSafeWhenPieceMoveFromTo(from: Cell, to: Cell): boolean {
