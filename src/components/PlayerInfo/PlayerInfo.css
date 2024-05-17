@@ -1,23 +1,26 @@
 .section-player{
     width: 100%;
-    max-width: 690px;
-    max-height: 690px;
-    padding: 5px;
+    max-width: 700px;
+    max-height: 700px;
     font-weight: bold; 
     background-color: rgb(169, 182, 182);
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
 }
 .avater{
-    width: 80px;
-    height: 80px;
+    width: 50px;
+    height: 50px;
     background-color: aqua;
+    margin: 10px;
 }
 
 .info-player{
+    color: black;
     flex: 1;
-    padding:5px;
+    padding-left: 10px;
+    height: 50px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -45,6 +48,7 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    margin: 10px;
 }
 
 .active{

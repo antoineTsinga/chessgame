@@ -8,9 +8,14 @@ import { Clock } from "../../core/icons/icons";
 export interface BoardProps {
   game: Game;
   player: Player;
+  setEndGameModal: (value: boolean) => void;
 }
 
-const PlayerInfo: React.FC<BoardProps> = ({ game, player }) => {
+const PlayerInfo: React.FC<BoardProps> = ({
+  game,
+  player,
+  setEndGameModal,
+}) => {
   const [active, setActive] = useState<boolean>(false);
   const [time, setTime] = useState<number>(game.timers[player.color]);
   const [advantage, setAdvantage] = useState<number>(0);
@@ -18,12 +23,18 @@ const PlayerInfo: React.FC<BoardProps> = ({ game, player }) => {
   const colortakenPieces: Color = player.color === "black" ? "white" : "black";
   const adversaryColorTakenPieces: Color =
     player.color !== "black" ? "white" : "black";
+
   useEffect(() => {
-    if (time === 0) return;
     const intervalId = setInterval(() => {
-      game.timers[player.color] = game.timers[player.color] - 1;
-      setTime((prevSeconds) => prevSeconds - 1);
+      game.timers[player.color] = Math.max(game.timers[player.color] - 1);
+      setTime((prevSeconds) => Math.max(0, prevSeconds - 1));
     }, 1000);
+
+    if (time === 0 || game.isGameOver()) {
+      game.setWinner();
+      setEndGameModal(true);
+      clearInterval(intervalId);
+    }
 
     const point = game.takenPieces[colortakenPieces].reduce(
       (p, p2) => p + p2.value,
@@ -45,6 +56,7 @@ const PlayerInfo: React.FC<BoardProps> = ({ game, player }) => {
   }, [
     adversaryColorTakenPieces,
     colortakenPieces,
+    game,
     game.takenPieces,
     game.timers,
     game.whoPlay,
@@ -52,7 +64,7 @@ const PlayerInfo: React.FC<BoardProps> = ({ game, player }) => {
     time,
   ]);
 
-  const formatTime = (time) => {
+  const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = time % 60;
     return `${minutes < 10 ? "0" : ""}${minutes}:${
@@ -92,7 +104,7 @@ const PlayerInfo: React.FC<BoardProps> = ({ game, player }) => {
         </div>
       </div>
 
-      <div className={`timer ${active && "active"}`}>
+      <div className={`timer ${active && time > 0 && "active"}`}>
         <Clock width={"1em"} style={{ opacity: active ? 1 : 0 }} />
         <span>{formatTime(time)}</span>
       </div>

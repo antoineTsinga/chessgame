@@ -1,24 +1,27 @@
 import React, { useEffect, useState } from "react";
-import "./Board.css";
-
+import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
+import Modal from "../Modal/Modal.tsx";
 import Cell from "../../core/types/Cell.ts";
 import Game from "../../core/config/Game.ts";
 import { makeMove, setPromotion, showPosibleMove } from "./utils.ts";
-import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
+import "./Board.css";
+import Player from "../../core/types/Player.ts";
 
 export interface BoardProps {
   game: Game;
+  currentPlayer: Player;
 }
 
-const Board: React.FC<BoardProps> = ({ game }) => {
+const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
   const [current, setCurrent] = useState<Cell | null>(null);
   const [prevCell, setPrevCell] = useState<Cell | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]);
   const [moveMakeFrom, setMoveMakeFrom] = useState<Cell | null>(null);
-  const [checkMessage, setCheckMessage] = useState<string>("");
+  const [endGameModal, setEndGameModal] = useState<boolean>(false);
   const [promotionModale, setPromotionModale] = useState<boolean>(false);
 
   const handleClick = (cell: Cell) => {
+    if (game.isGameOver()) return;
     if (prevCell && !prevCell.isEmpty) {
       makeMove(prevCell, cell, game, setPossibleMoves, setPrevCell);
     } else {
@@ -34,13 +37,23 @@ const Board: React.FC<BoardProps> = ({ game }) => {
     if (game.toPromote) setPromotionModale(true);
   }, [game.toPromote]);
 
+  useEffect(() => {
+    if (game.isGameOver()) {
+      setEndGameModal(true);
+    }
+  }, [game, game.whoPlay]);
+
   const setPromotionCall = (cell: Cell | null, code: string) => {
     setPromotion(cell, code, game, setPromotionModale);
   };
 
   return (
     <div className="container">
-      <PlayerInfo game={game} player={game.player2} />
+      <PlayerInfo
+        game={game}
+        player={game.player2}
+        setEndGameModal={setEndGameModal}
+      />
       <div className={`board ${game.player1.color === "black" && "reverse"}`}>
         {game.board.map((row, i) =>
           row.map((cell, j) => (
@@ -69,7 +82,11 @@ const Board: React.FC<BoardProps> = ({ game }) => {
           ))
         )}
       </div>
-      <PlayerInfo game={game} player={game.player1} />
+      <PlayerInfo
+        game={game}
+        player={game.player1}
+        setEndGameModal={setEndGameModal}
+      />
 
       {promotionModale && game.toPromote && game.toPromote.piece ? (
         <div className="promotion">
@@ -100,6 +117,28 @@ const Board: React.FC<BoardProps> = ({ game }) => {
         </div>
       ) : (
         <></>
+      )}
+      {endGameModal ? (
+        <Modal
+          title={
+            game.getWinner() ? `${game.getWinner()?.color} win` : "It's a draw"
+          }
+          onclick={setEndGameModal}
+        >
+          {game.winner === null ? (
+            <div className="win">🫱🏿‍🫲🏻</div>
+          ) : game.winner === currentPlayer ? (
+            <div className="win">🎉</div>
+          ) : (
+            <div className="win">😭</div>
+          )}
+        </Modal>
+      ) : (
+        <input
+          value="menu"
+          type="button"
+          onClick={() => setEndGameModal(true)}
+        />
       )}
     </div>
   );

@@ -9,7 +9,7 @@ function App() {
   return (
     <div className="App">
       {/* <Login /> */}
-      <Board game={game} />
+      <Board game={game} current={game.player1} />
     </div>
   );
 }

@@ -10,7 +10,6 @@ export default class Game {
   hostCode: string;
   board: BoardType;
   history: string[] = [];
-  gameOver: boolean = false;
   isGameStart: boolean = false;
   winner: Player | null = null;
   turn: number = 1;
@@ -42,16 +41,26 @@ export default class Game {
   }
 
   isGameOver(): boolean {
+    this.setWinner();
     return (
       this.isCheckMat(this.player1) ||
       this.isCheckMat(this.player2) ||
-      this.isNull()
+      this.isNull() ||
+      this.timers.black <= 0 ||
+      this.timers.white <= 0
     );
   }
+
+  setWinner(): void {
+    if (this.isCheckMat(this.player1) || this.timers[this.player1.color] <= 0) {
+      this.winner = this.player2;
+    }
+    if (this.isCheckMat(this.player2) || this.timers[this.player2.color] <= 0) {
+      this.winner = this.player1;
+    }
+  }
   getWinner(): Player | null {
-    if (this.isCheckMat(this.player1)) return this.player1;
-    if (this.isCheckMat(this.player2)) return this.player2;
-    return null;
+    return this.winner;
   }
 
   reMatch(): void {
@@ -65,7 +74,6 @@ export default class Game {
       this.whoPlay = this.player2;
     }
     this.board = createBoard();
-    this.gameOver = false;
     this.history = [];
     this.isGameStart = true;
     this.winner = null;
@@ -158,8 +166,6 @@ export default class Game {
     const leftPiecesPlayer2 = this.leftPieceTo(this.player2).map(
       (cell) => cell.piece?.code
     );
-
-    console.log(leftPiecesPlayer1, leftPiecesPlayer2);
 
     return (
       notEnougthMaterials.includes(leftPiecesPlayer1.join("")) &&
@@ -289,6 +295,10 @@ export default class Game {
     if (to.piece?.code === "K") {
       //update king position
       this.kingPos[to.piece.color] = [to.row, to.column];
+    }
+
+    if (this.isGameOver()) {
+      this.setWinner();
     }
     return true;
   }
