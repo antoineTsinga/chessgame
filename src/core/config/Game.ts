@@ -359,25 +359,19 @@ export default class Game {
 
   setPromotion(cell: Cell, code: string) {
     const color = cell.piece.color;
-    console.log(cell);
     switch (code) {
       case "N":
         cell.piece = new Knight(color, this.getImage("N", color.charAt(0)));
-        console.log("N");
         break;
 
       case "B":
         cell.piece = new Bishop(color, this.getImage("B", color.charAt(0)));
-        console.log("B");
         break;
 
       case "R":
-        cell.piece = new Rook(color, this.getImage("R", color.charAt(0)));
-        console.log("R");
         break;
       case "Q":
         cell.piece = new Queen(color, this.getImage("Q", color.charAt(0)));
-        console.log("Q");
         break;
     }
     this.toPromote = null;
@@ -697,14 +691,12 @@ export default class Game {
     );
 
     if (whiteKing && whiteKing.piece && whiteKing.piece.isFirstMove) {
-      console.log("ok ok");
       if (
         whiteRooks.some(
           (r) => r.row === 7 && r.column === 7 && r.piece?.isFirstMove
         )
       ) {
         castlingRights += "K";
-        console.log("ok");
       }
       if (
         whiteRooks.some(
