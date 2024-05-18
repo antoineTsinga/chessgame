@@ -3,6 +3,7 @@ import Player from "../types/Player.ts";
 import { createBoard } from "./initialBoard.ts";
 import IPiece from "../types/IPiece.ts";
 import Cell from "../types/Cell.ts";
+import { Bishop, Knight, Queen, Rook } from "./pieces/piece.ts";
 
 export default class Game {
   player1: Player = new Player();
@@ -34,6 +35,13 @@ export default class Game {
     this.hostCode = Math.random().toString();
 
     this.board = createBoard();
+  }
+
+  fen(): string {
+    return "";
+  }
+  getOpponent(player: Player): Player {
+    return this.player1 === player ? this.player2 : this.player1;
   }
 
   getTimer(player: Player): number {
@@ -231,6 +239,20 @@ export default class Game {
     );
   }
 
+  isPromotion(from: Cell, to: Cell): boolean {
+    if (
+      this.isValidMove(from, to) &&
+      from.piece?.code === "P" &&
+      (to.row === 0 || to.row === 7)
+    ) {
+      this.toPromote = to;
+
+      return true;
+    }
+
+    return false;
+  }
+
   changeTurn() {
     this.whoPlay = this.whoPlay === this.player1 ? this.player2 : this.player1;
   }
@@ -256,24 +278,25 @@ export default class Game {
     return possibleMoves;
   }
 
-  movePieceFromCellTo(from: Cell, to: Cell): boolean {
+  isValidMove(from: Cell, to: Cell): boolean {
     const possibleMoves = this.possibleMoveFrom(from);
+    return possibleMoves?.includes(to);
+  }
+  movePieceFromCellTo(
+    from: Cell,
+    to: Cell,
+    promotion: string | null = null
+  ): boolean {
+    if (!from.piece || !this.isValidMove(from, to)) return false;
 
-    if (from.piece == null || !possibleMoves?.includes(to)) {
-      return false;
-    }
-
-    if (to.piece) {
-      this.takenPieces[to.piece.color].push(to.piece);
-    }
+    to.piece && this.takenPieces[to.piece.color].push(to.piece); // add in stack when taken pieces
 
     if (from.piece.code === "P") {
-      this.makePawnMove(from, to);
+      this.makePawnMove(from, to, promotion);
     } else if (
       from.piece.code === "K" &&
-      Math.abs(from.column - to.column) === 2
+      Math.abs(from.column - to.column) === 2 // move from two cells roque
     ) {
-      //roque
       this.makeRoqueMove(from, to);
     } else {
       from.movePieceTo(to);
@@ -303,7 +326,7 @@ export default class Game {
     return true;
   }
 
-  makePawnMove(from: Cell, to: Cell) {
+  makePawnMove(from: Cell, to: Cell, promotion: string | null = null) {
     if (
       (from.row === 6 && to.row === 4) || // some pieces can possibly make an enpassant
       (from.row === 1 && to.row === 3)
@@ -324,9 +347,38 @@ export default class Game {
       from.movePieceTo(to);
     }
 
-    if (to.row === 0 || to.row === 7) {
-      this.toPromote = to;
+    if (promotion) {
+      this.setPromotion(to, promotion);
     }
+  }
+
+  getImage = (type: string, colorChar0: string) =>
+    `/images/pions/${type + colorChar0}.png`;
+
+  setPromotion(cell: Cell, code: string) {
+    const color = cell.piece.color;
+    console.log(cell);
+    switch (code) {
+      case "N":
+        cell.piece = new Knight(color, this.getImage("N", color.charAt(0)));
+        console.log("N");
+        break;
+
+      case "B":
+        cell.piece = new Bishop(color, this.getImage("B", color.charAt(0)));
+        console.log("B");
+        break;
+
+      case "R":
+        cell.piece = new Rook(color, this.getImage("R", color.charAt(0)));
+        console.log("R");
+        break;
+      case "Q":
+        cell.piece = new Queen(color, this.getImage("Q", color.charAt(0)));
+        console.log("Q");
+        break;
+    }
+    this.toPromote = null;
   }
 
   makeRoqueMove(from: Cell, to: Cell) {

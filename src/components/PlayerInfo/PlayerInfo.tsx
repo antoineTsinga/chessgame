@@ -20,9 +20,8 @@ const PlayerInfo: React.FC<BoardProps> = ({
   const [time, setTime] = useState<number>(game.timers[player.color]);
   const [advantage, setAdvantage] = useState<number>(0);
 
-  const colortakenPieces: Color = player.color === "black" ? "white" : "black";
-  const adversaryColorTakenPieces: Color =
-    player.color !== "black" ? "white" : "black";
+  const colortakenPieces: Color = game.getOpponent(player).color;
+  const adversaryColorTakenPieces: Color = player.color;
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -36,14 +35,12 @@ const PlayerInfo: React.FC<BoardProps> = ({
       clearInterval(intervalId);
     }
 
-    const point = game.takenPieces[colortakenPieces].reduce(
-      (p, p2) => p + p2.value,
-      0
-    );
-    const adversary = game.takenPieces[adversaryColorTakenPieces].reduce(
-      (p, p2) => p + p2.value,
-      0
-    );
+    const point = game
+      .leftPieceTo(player)
+      .reduce((p, p2) => p + p2.piece.value, 0);
+    const adversary = game
+      .leftPieceTo(game.getOpponent(player))
+      .reduce((p, p2) => p + p2.piece.value, 0);
 
     setAdvantage(Math.max(0, point - adversary));
     if (game.whoPlay === player) {
@@ -61,6 +58,7 @@ const PlayerInfo: React.FC<BoardProps> = ({
     game.timers,
     game.whoPlay,
     player,
+    setEndGameModal,
     time,
   ]);
 

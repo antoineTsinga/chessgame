@@ -8,7 +8,7 @@ export default class Queen implements IPiece {
   isFirstMove: boolean = true;
   name: string = "Queen";
   code: string = "Q";
-  value: number = 10;
+  value: number = 9;
   enPassant: Cell | null;
 
   constructor(color: Color, img: string) {

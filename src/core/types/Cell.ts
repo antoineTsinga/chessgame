@@ -23,8 +23,7 @@ export default class Cell {
   }
 
   movePieceTo(cell: Cell): boolean {
-    const possible = this.piece?.getPossiblesMove(this, this.board);
-    if (this.piece == null || !possible?.includes(cell)) {
+    if (this.piece == null) {
       return false;
     }
 

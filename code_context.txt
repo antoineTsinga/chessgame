@@ -1,0 +1,2032 @@
+// File: src/App.css
+.App {
+    background-color: rgb(49, 32, 28);
+    color: white;
+}
+
+// File: src/App.js
+import "./App.css";
+import Board from "./components/Board/Board.tsx";
+import Login from "./components/Login/Login.tsx";
+import Game from "./core/config/Game.ts";
+
+function App() {
+  const game = new Game("player1");
+  game.player2.name = "player2";
+  return (
+    <div className="App">
+      {/* <Login /> */}
+      <Board game={game} current={game.player1} />
+    </div>
+  );
+}
+
+export default App;
+
+// File: src/components/Board/Board.css
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+}
+
+.board {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 700px;
+  max-height: 700px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+
+  border: 1px solid #666;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border: 1px solid #666;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease-in-out;
+  cursor: pointer;
+  position: relative;
+}
+
+.reverse{
+  transform: rotate(180deg)
+}
+
+.black {
+  background-color: gray;
+}
+
+.white {
+  background-color: white;
+}
+
+.black:hover {
+  background-color: rgba(65, 112, 119, 0.3);
+}
+
+.white:hover {
+  background-color: rgba(65, 112, 119, 0.3);
+}
+
+.piece {
+  width: 75%;
+  height: 75%;
+}
+
+.cell-target-piece {
+  background-color: rgb(222, 240, 85) !important;
+}
+
+.possible-moves {
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  background-color: rgba(12, 41, 12, 0.518) !important;
+  border-radius: 50%;
+}
+
+.promotion{
+  width: 30%;
+  position: absolute;
+  display: flex;
+  background-color: rgb(110, 27, 159);
+  box-shadow: 0 0 10px;
+  border-radius: 5px;
+}
+
+.promotion .piece{
+  width: 25%;
+  transition: ease-in-out;
+}
+
+.promotion .piece:hover{
+  width: 25%;
+  background-color: rgb(43, 43, 39);
+  border-radius: 5px;
+  
+}
+
+.win{
+  display: block;
+  font-size: 12em;
+  text-align: center;
+
+}
+// File: src/components/Board/Board.tsx
+import React, { useEffect, useState } from "react";
+import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
+import Modal from "../Modal/Modal.tsx";
+import Cell from "../../core/types/Cell.ts";
+import Game from "../../core/config/Game.ts";
+import { makeMove, setPromotion, showPosibleMove } from "./utils.ts";
+import "./Board.css";
+import Player from "../../core/types/Player.ts";
+
+export interface BoardProps {
+  game: Game;
+  currentPlayer: Player;
+}
+
+const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
+  const [current, setCurrent] = useState<Cell | null>(null);
+  const [prevCell, setPrevCell] = useState<Cell | null>(null);
+  const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]);
+  const [moveMakeFrom, setMoveMakeFrom] = useState<Cell | null>(null);
+  const [endGameModal, setEndGameModal] = useState<boolean>(false);
+  const [promotionModale, setPromotionModale] = useState<boolean>(false);
+
+  const handleClick = (cell: Cell) => {
+    if (game.isGameOver()) return;
+    if (prevCell && !prevCell.isEmpty) {
+      makeMove(prevCell, cell, game, setPossibleMoves, setPrevCell);
+    } else {
+      if (game.whoPlay.color !== cell.piece?.color) {
+        return;
+      }
+      setCurrent(cell);
+      showPosibleMove(cell, game, setPossibleMoves, setPrevCell);
+    }
+  };
+
+  useEffect(() => {
+    if (game.toPromote) setPromotionModale(true);
+  }, [game.toPromote]);
+
+  useEffect(() => {
+    if (game.isGameOver()) {
+      setEndGameModal(true);
+    }
+  }, [game, game.whoPlay]);
+
+  const setPromotionCall = (cell: Cell | null, code: string) => {
+    setPromotion(cell, code, game, setPromotionModale);
+  };
+
+  return (
+    <div className="container">
+      <PlayerInfo
+        game={game}
+        player={game.player2}
+        setEndGameModal={setEndGameModal}
+      />
+      <div className={`board ${game.player1.color === "black" && "reverse"}`}>
+        {game.board.map((row, i) =>
+          row.map((cell, j) => (
+            <div
+              key={`${i}${j}`}
+              className={`cell ${
+                (current === cell && !cell.isEmpty && "cell-target-piece") ||
+                (moveMakeFrom === cell && "cell-target-piece")
+              } ${cell.color} `}
+              onClick={() => handleClick(cell)}
+            >
+              <div />
+              {!cell.isEmpty && (
+                <img
+                  className={`piece ${
+                    game.player1.color === "black" && " reverse"
+                  }`}
+                  src={cell.piece?.img}
+                  alt={cell.piece?.name}
+                />
+              )}
+              <div
+                className={possibleMoves.includes(cell) ? "possible-moves" : ""}
+              ></div>
+            </div>
+          ))
+        )}
+      </div>
+      <PlayerInfo
+        game={game}
+        player={game.player1}
+        setEndGameModal={setEndGameModal}
+      />
+
+      {promotionModale && game.toPromote && game.toPromote.piece ? (
+        <div className="promotion">
+          <img
+            className="piece"
+            src={`/images/pions/N${game.toPromote.piece.color.charAt(0)}.png`}
+            alt={"Knight"}
+            onClick={() => setPromotionCall(game.toPromote, "N")}
+          />
+          <img
+            className="piece"
+            src={`/images/pions/B${game.toPromote.piece.color.charAt(0)}.png`}
+            alt={"Bishop"}
+            onClick={() => setPromotionCall(game.toPromote, "B")}
+          />
+          <img
+            className="piece"
+            src={`/images/pions/R${game.toPromote.piece.color.charAt(0)}.png`}
+            alt={"Rook"}
+            onClick={() => setPromotionCall(game.toPromote, "R")}
+          />
+          <img
+            className="piece"
+            src={`/images/pions/Q${game.toPromote.piece.color.charAt(0)}.png`}
+            alt={"Queen"}
+            onClick={() => setPromotionCall(game.toPromote, "Q")}
+          />
+        </div>
+      ) : (
+        <></>
+      )}
+      {endGameModal ? (
+        <Modal
+          title={
+            game.getWinner() ? `${game.getWinner()?.color} win` : "It's a draw"
+          }
+          onclick={setEndGameModal}
+        >
+          {game.winner === null ? (
+            <div className="win">🫱🏿‍🫲🏻</div>
+          ) : game.winner === game.player1 ? (
+            <div className="win">🎉</div>
+          ) : (
+            <div className="win">😭</div>
+          )}
+        </Modal>
+      ) : (
+        <input
+          value="menu"
+          type="button"
+          onClick={() => setEndGameModal(true)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Board;
+
+// File: src/components/Board/utils.ts
+import Game from "../../core/config/Game";
+import { Bishop, Knight, Queen, Rook } from "../../core/config/pieces/piece.ts";
+import Cell from "../../core/types/Cell";
+
+type SetterListCell = (moves: Cell[]) => void;
+
+type SetterCell = (cell: Cell | null) => void;
+
+type SetterBoolean = (value: boolean) => void;
+
+/**
+ * Show possibles moves that a the piece in a specific can make
+ * @param cell cell contening the piece we want to see move
+ * @param game game manager
+ * @param setPossibleMoves setter to update the state
+ * @param setPrevCell setter to update the state
+ */
+const showPosibleMove = (
+  cell: Cell,
+  game: Game,
+  setPossibleMoves: SetterListCell,
+  setPrevCell: SetterCell
+) => {
+  setPossibleMoves(game.possibleMoveFrom(cell));
+  setPrevCell(cell);
+};
+
+/**
+ * Move piece from cell to an other one
+ * @param from
+ * @param to
+ * @param game
+ * @param setPossibleMoves
+ * @param setPrevCell
+ * @returns
+ */
+const makeMove = (
+  from: Cell,
+  to: Cell,
+  game: Game,
+  setPossibleMoves: SetterListCell,
+  setPrevCell: SetterCell
+) => {
+  if (!from || to === from || to?.piece?.color === from?.piece?.color) {
+    showPosibleMove(to, game, setPossibleMoves, setPrevCell);
+    return;
+  }
+
+  setPossibleMoves([]);
+  game.movePieceFromCellTo(from, to);
+  setPrevCell(null);
+};
+
+const getImage = (type: string, colorChar0: string) =>
+  `/images/pions/${type + colorChar0}.png`;
+
+const setPromotion = (
+  cell: Cell | null,
+  code: string,
+  game: Game,
+  setPromotionModale: SetterBoolean
+) => {
+  if (!cell || !cell.piece || !game.toPromote) return;
+
+  const color = cell.piece.color;
+  console.log(cell);
+  switch (code) {
+    case "N":
+      cell.piece = new Knight(color, getImage("N", color.charAt(0)));
+      console.log("N");
+      break;
+
+    case "B":
+      cell.piece = new Bishop(color, getImage("B", color.charAt(0)));
+      console.log("B");
+      break;
+
+    case "R":
+      cell.piece = new Rook(color, getImage("R", color.charAt(0)));
+      console.log("R");
+      break;
+    case "Q":
+      cell.piece = new Queen(color, getImage("Q", color.charAt(0)));
+      console.log("Q");
+      break;
+  }
+  game.toPromote = null;
+  setPromotionModale(false);
+};
+
+export { showPosibleMove, makeMove, setPromotion };
+
+// File: src/components/Login/Login.css
+.login {
+  width: 25%;
+  border: 1px solid black;
+  background-color: blue;
+}
+.btn {
+}
+
+// File: src/components/Login/Login.tsx
+import React, { useState } from "react";
+
+const Login = () => {
+  const [name, setName] = useState<string>("");
+  const [joinCode, setJoinCode] = useState<string>("");
+  const [hostCode, setHostCode] = useState<string>("");
+  const createGame = () => {
+    //call to back : create partie (socket)
+  };
+
+  const joinGame = () => {
+    // call to back : join partie (socket)
+  };
+
+  return (
+    <div className="login">
+      <div className="field">
+        <label htmlFor="name">Name :</label>
+        <input
+          className="textinput"
+          type="text"
+          name="name"
+          placeholder="Enter your name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </div>
+      <div className="field">
+        <input
+          className="btn"
+          type="button"
+          value="host game"
+          onClick={createGame}
+        />
+        <input
+          className="textinput"
+          type="text"
+          name="codecreate"
+          placeholder="Code partie will be there"
+          value={hostCode}
+          onChange={(e) => setHostCode(e.target.value)}
+          disabled
+        />
+        <div></div>
+      </div>
+      <div className="field">
+        <input
+          onClick={joinGame}
+          className="btn"
+          type="button"
+          value="join a game"
+        />
+        <input
+          className="textinput"
+          name="codejoin"
+          type="text"
+          placeholder="Enter code"
+          value={joinCode}
+          onChange={(e) => setJoinCode(e.target.value)}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default Login;
+
+// File: src/components/Modal/Modal.css
+.modal{
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    
+    
+}
+
+.modal-background{
+    width: 100%;
+    height: 100%;
+    
+    display: flex;
+    border: 1px solid black;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(0, 0, 0,0.8);
+}
+
+.modal-content{
+    width: 400px;
+    min-height: 50%;
+    margin: 10px;
+    background-color: white;
+    color: black;
+    border-radius: 10px;
+    padding: 20px;
+    transition: opacity 1s ease;
+    display: flex;
+    flex-direction: column;
+    
+}
+
+.modal-header{
+    display: flex;
+    flex-direction: row;
+
+}
+
+.modal-title{
+    flex: 1;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: center;
+}
+
+.modal-close-btn{
+    cursor: pointer;
+}
+// File: src/components/Modal/Modal.tsx
+import React from "react";
+import "./Modal.css";
+import { Close } from "../../core/icons/icons";
+
+export default function Modal({ title, onclick, children }) {
+  return (
+    <div className="modal">
+      <div className="modal-background">
+        <div className="modal-content">
+          <div className="modal-header">
+            <div className="modal-title">{title}</div>
+            <Close
+              className="modal-close-btn"
+              style={{ width: "2em" }}
+              onClick={() => onclick(false)}
+            />
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// File: src/components/PlayerInfo/PlayerInfo.css
+.section-player{
+    width: 100%;
+    max-width: 700px;
+    max-height: 700px;
+    font-weight: bold; 
+    background-color: rgb(169, 182, 182);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+.avater{
+    width: 50px;
+    height: 50px;
+    background-color: aqua;
+    margin: 10px;
+}
+
+.info-player{
+    color: black;
+    flex: 1;
+    padding-left: 10px;
+    height: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.pieces{
+    display: flex;
+    flex-direction: row;
+
+}
+
+.item-piece{
+    width: 30px;
+    position: relative;
+}
+
+.timer{
+    padding: 10px;
+    text-align: center;
+    width: 60px;
+    height: fit-content;
+    background-color: rgb(88, 97, 97);
+    border-radius: 3px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px;
+}
+
+.active{
+    background-color: rgb(23, 23, 23);
+}
+
+.relative{
+    max-width: 100px;
+    display: flex;
+    flex-direction: row;
+}
+
+
+// File: src/components/PlayerInfo/PlayerInfo.tsx
+import React, { useEffect, useState } from "react";
+import Game from "../../core/config/Game";
+import Player from "../../core/types/Player";
+import { Color } from "../../core/types/Type";
+import "./PlayerInfo.css";
+import { Clock } from "../../core/icons/icons";
+
+export interface BoardProps {
+  game: Game;
+  player: Player;
+  setEndGameModal: (value: boolean) => void;
+}
+
+const PlayerInfo: React.FC<BoardProps> = ({
+  game,
+  player,
+  setEndGameModal,
+}) => {
+  const [active, setActive] = useState<boolean>(false);
+  const [time, setTime] = useState<number>(game.timers[player.color]);
+  const [advantage, setAdvantage] = useState<number>(0);
+
+  const colortakenPieces: Color = player.color === "black" ? "white" : "black";
+  const adversaryColorTakenPieces: Color =
+    player.color !== "black" ? "white" : "black";
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      game.timers[player.color] = Math.max(game.timers[player.color] - 1);
+      setTime((prevSeconds) => Math.max(0, prevSeconds - 1));
+    }, 1000);
+
+    if (time === 0 || game.isGameOver()) {
+      game.setWinner();
+      setEndGameModal(true);
+      clearInterval(intervalId);
+    }
+
+    const point = game.takenPieces[colortakenPieces].reduce(
+      (p, p2) => p + p2.value,
+      0
+    );
+    const adversary = game.takenPieces[adversaryColorTakenPieces].reduce(
+      (p, p2) => p + p2.value,
+      0
+    );
+
+    setAdvantage(Math.max(0, point - adversary));
+    if (game.whoPlay === player) {
+      setActive(true);
+    } else {
+      setActive(false);
+      clearInterval(intervalId);
+    }
+    return () => clearInterval(intervalId);
+  }, [
+    adversaryColorTakenPieces,
+    colortakenPieces,
+    game,
+    game.takenPieces,
+    game.timers,
+    game.whoPlay,
+    player,
+    time,
+  ]);
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes < 10 ? "0" : ""}${minutes}:${
+      seconds < 10 ? "0" : ""
+    }${seconds}`;
+  };
+
+  const printPiece = (code: string) => {
+    let leftpixels = 20;
+    return game.takenPieces[colortakenPieces]
+      .filter((piece) => piece.code === code && piece.color !== player.color)
+      .map((piece, index) => {
+        leftpixels -= 20;
+        return (
+          <img
+            key={index}
+            className="item-piece"
+            src={piece.img}
+            style={{ left: leftpixels + "px" }}
+            alt={piece.name}
+          />
+        );
+      });
+  };
+  return (
+    <div className="section-player">
+      <img className="avater" src="/images/user.png" alt={player.name} />
+      <div className="info-player">
+        <span>{player.name + " " + player.color}</span>
+        <div className="pieces">
+          <div className="pawn relative">{printPiece("P")}</div>
+          <div className="knight relative">{printPiece("N")}</div>
+          <div className="bishop relative">{printPiece("B")}</div>
+          <div className="rook relative">{printPiece("R")}</div>
+          <div className="queen relative">{printPiece("Q")}</div>
+          <span>{advantage > 0 && "+" + advantage}</span>
+        </div>
+      </div>
+
+      <div className={`timer ${active && time > 0 && "active"}`}>
+        <Clock width={"1em"} style={{ opacity: active ? 1 : 0 }} />
+        <span>{formatTime(time)}</span>
+      </div>
+    </div>
+  );
+};
+
+export default PlayerInfo;
+
+// File: src/core/config/Game.ts
+import { BoardType, Color } from "../types/Type";
+import Player from "../types/Player.ts";
+import { createBoard } from "./initialBoard.ts";
+import IPiece from "../types/IPiece.ts";
+import Cell from "../types/Cell.ts";
+
+export default class Game {
+  player1: Player = new Player();
+  player2: Player = new Player();
+  hostCode: string;
+  board: BoardType;
+  history: string[] = [];
+  isGameStart: boolean = false;
+  winner: Player | null = null;
+  turn: number = 1;
+  whoPlay: Player;
+  toPromote: Cell | null = null;
+  LastFiftyMoveWithoutTake: number[] = [];
+  timers: { black: number; white: number } = { black: 600, white: 600 };
+  takenPieces: { black: IPiece[]; white: IPiece[] } = { black: [], white: [] };
+  kingPos: { white: [number, number]; black: [number, number] } = {
+    white: [7, 4],
+    black: [0, 4],
+  };
+
+  constructor(namePlayer1: string) {
+    const color: { 0: Color; 1: Color } = { 0: "white", 1: "black" };
+    const random = Math.round(Math.random());
+    this.player1.color = color[random];
+    this.player1.name = namePlayer1;
+    this.player2.color = color[1 - random];
+
+    this.whoPlay = random === 0 ? this.player1 : this.player2;
+    this.hostCode = Math.random().toString();
+
+    this.board = createBoard();
+  }
+
+  getTimer(player: Player): number {
+    return this.timers[player.color];
+  }
+
+  isGameOver(): boolean {
+    this.setWinner();
+    return (
+      this.isCheckMat(this.player1) ||
+      this.isCheckMat(this.player2) ||
+      this.isNull() ||
+      this.timers.black <= 0 ||
+      this.timers.white <= 0
+    );
+  }
+
+  setWinner(): void {
+    if (this.isCheckMat(this.player1) || this.timers[this.player1.color] <= 0) {
+      this.winner = this.player2;
+    }
+    if (this.isCheckMat(this.player2) || this.timers[this.player2.color] <= 0) {
+      this.winner = this.player1;
+    }
+  }
+  getWinner(): Player | null {
+    return this.winner;
+  }
+
+  reMatch(): void {
+    if (this.player1.color === "black") {
+      this.player1.color = "white";
+      this.player2.color = "black";
+      this.whoPlay = this.player1;
+    } else {
+      this.player2.color = "white";
+      this.player1.color = "black";
+      this.whoPlay = this.player2;
+    }
+    this.board = createBoard();
+    this.history = [];
+    this.isGameStart = true;
+    this.winner = null;
+    this.turn = 1;
+    this.toPromote = null;
+    this.LastFiftyMoveWithoutTake = [];
+    this.takenPieces = { black: [], white: [] };
+    this.timers = { black: 600, white: 600 };
+  }
+
+  getkingCell(color: Color): Cell {
+    const kingCell = this.board[this.kingPos[color][0]][this.kingPos[color][1]];
+    return kingCell;
+  }
+
+  isCheckMat(player: Player): boolean {
+    let onePieceCanMove = false;
+
+    this.leftPieceTo(player).map((cell) => {
+      onePieceCanMove = onePieceCanMove || this.canMove(cell);
+      return 0;
+    });
+    return this.isInCheck(player) && !onePieceCanMove;
+  }
+
+  noPieceCanMove(player: Player): boolean {
+    let noPieceCanMove = true;
+    this.leftPieceTo(player).forEach((cell) => {
+      noPieceCanMove = noPieceCanMove && !this.canMove(cell);
+    });
+
+    return noPieceCanMove;
+  }
+
+  canMove(cell: Cell): boolean {
+    const possibleMoves = this.possibleMoveFrom(cell);
+    return possibleMoves.length > 0;
+  }
+
+  leftPieceTo(player: Player): Cell[] {
+    const leftPieces: Cell[] = [];
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        if (
+          this.board[i][j].piece &&
+          this.board[i][j].piece?.color === player.color
+        ) {
+          leftPieces.push(this.board[i][j]);
+        }
+      }
+    }
+
+    return leftPieces;
+  }
+
+  totalLeftPieces() {
+    return (
+      this.leftPieceTo(this.player1).length +
+      this.leftPieceTo(this.player2).length
+    );
+  }
+
+  isNull(): boolean {
+    return (
+      this.isPat() ||
+      this.notEnougthMaterial() ||
+      this.isRepetition() ||
+      this.isFiftyMoveWithoutTake()
+    );
+  }
+  isPat(): boolean {
+    return (
+      this.noPieceCanMove(this.player1) || this.noPieceCanMove(this.player2)
+    );
+  }
+
+  notEnougthMaterial(): boolean {
+    const notEnougthMaterials: (string | undefined)[] = [
+      "K",
+      "KN",
+      "NK",
+      "KB",
+      "BK",
+    ];
+
+    const leftPiecesPlayer1 = this.leftPieceTo(this.player1).map(
+      (cell) => cell.piece?.code
+    );
+
+    const leftPiecesPlayer2 = this.leftPieceTo(this.player2).map(
+      (cell) => cell.piece?.code
+    );
+
+    return (
+      notEnougthMaterials.includes(leftPiecesPlayer1.join("")) &&
+      notEnougthMaterials.includes(leftPiecesPlayer2.join(""))
+    );
+  }
+
+  takeEnPassant(from: Cell, to: Cell): void {
+    from.piece.enPassant = null;
+    to.piece = from.piece;
+    this.board[from.row][to.column].piece = null;
+    from.piece = null;
+  }
+
+  isInCheck(player: Player): boolean {
+    const kingCell: Cell = this.getkingCell(player.color);
+    return (
+      !this.noQueenOrBishopTargetingThisCellForKing(
+        kingCell,
+        kingCell,
+        kingCell
+      ) ||
+      !this.noQueenOrRookTargetingThisCellForKing(
+        kingCell,
+        kingCell,
+        kingCell
+      ) ||
+      !this.noPawnTargetingThisCellForKing(kingCell, kingCell, kingCell) ||
+      !this.noKnightTargetingThisCellForKing(kingCell, kingCell, kingCell) ||
+      !this.noKingTargetingThisCellForKing(kingCell, kingCell, kingCell)
+    );
+  }
+
+  isRepetition(): boolean {
+    const state: string = this.stringifyBoard();
+    const repetitions = this.history.filter(
+      (position) => position === state
+    ).length;
+
+    return repetitions >= 3; //there are already 2 states equal to the current state in history so it's repetion
+  }
+
+  stringifyBoard(): string {
+    return JSON.stringify(
+      this.board.map((rows) =>
+        rows.map((cell) => {
+          if (cell.isEmpty) {
+            return "X";
+          } else {
+            return cell.piece?.code;
+          }
+        })
+      )
+    );
+  }
+
+  isFiftyMoveWithoutTake(): boolean {
+    return (
+      this.LastFiftyMoveWithoutTake.length >= 50 &&
+      this.LastFiftyMoveWithoutTake.filter(
+        (leftPiece) => leftPiece !== this.LastFiftyMoveWithoutTake[0]
+      ).length === 0
+    );
+  }
+
+  changeTurn() {
+    this.whoPlay = this.whoPlay === this.player1 ? this.player2 : this.player1;
+  }
+
+  possibleMoveFrom(cell: Cell) {
+    if (cell.piece == null) {
+      return [];
+    }
+    let possibleMoves = cell.piece?.getPossiblesMove(cell, this.board);
+
+    if (cell.piece.enPassant != null) {
+      const cellEnPassant =
+        this.board[(cell.row + cell.piece.enPassant.row) / 2][
+          cell.piece.enPassant.column
+        ];
+      possibleMoves.push(cellEnPassant);
+    }
+
+    possibleMoves = possibleMoves?.filter((to) =>
+      this.kingIsSafeWhenPieceMoveFromTo(cell, to)
+    );
+
+    return possibleMoves;
+  }
+
+  movePieceFromCellTo(from: Cell, to: Cell): boolean {
+    const possibleMoves = this.possibleMoveFrom(from);
+
+    if (from.piece == null || !possibleMoves?.includes(to)) {
+      return false;
+    }
+
+    if (to.piece) {
+      this.takenPieces[to.piece.color].push(to.piece);
+    }
+
+    if (from.piece.code === "P") {
+      this.makePawnMove(from, to);
+    } else if (
+      from.piece.code === "K" &&
+      Math.abs(from.column - to.column) === 2
+    ) {
+      //roque
+      this.makeRoqueMove(from, to);
+    } else {
+      from.movePieceTo(to);
+    }
+
+    if (
+      this.LastFiftyMoveWithoutTake.length > 0 &&
+      this.LastFiftyMoveWithoutTake[0] === this.totalLeftPieces()
+    ) {
+      this.LastFiftyMoveWithoutTake.push(this.totalLeftPieces());
+    } else {
+      this.LastFiftyMoveWithoutTake = [this.totalLeftPieces()];
+    }
+
+    this.history.push(this.stringifyBoard());
+
+    this.changeTurn(); //change turn
+
+    if (to.piece?.code === "K") {
+      //update king position
+      this.kingPos[to.piece.color] = [to.row, to.column];
+    }
+
+    if (this.isGameOver()) {
+      this.setWinner();
+    }
+    return true;
+  }
+
+  makePawnMove(from: Cell, to: Cell) {
+    if (
+      (from.row === 6 && to.row === 4) || // some pieces can possibly make an enpassant
+      (from.row === 1 && to.row === 3)
+    ) {
+      from.piece?.getNeighbors(this.board, to.row, to.column).map((cell) => {
+        //add possible move to adjacent pawn
+        cell.piece.enPassant = this.board[from.row][from.column];
+      });
+    }
+    if (
+      from.piece?.enPassant &&
+      this.board[to.row][from.piece?.enPassant.column] === to
+    ) {
+      this.takeEnPassant(from, to);
+    } else {
+      //after a move enPassent can no longer be possible to the same pawn
+      from.piece.enPassant = null;
+      from.movePieceTo(to);
+    }
+
+    if (to.row === 0 || to.row === 7) {
+      this.toPromote = to;
+    }
+  }
+
+  makeRoqueMove(from: Cell, to: Cell) {
+    from.movePieceTo(to);
+    if (to.column === 6) {
+      //"small roque"
+      this.board[from.row][5].piece = this.board[from.row][7].piece;
+      this.board[from.row][7].piece = null;
+    }
+    if (to.column === 2) {
+      //"big roque"
+      this.board[from.row][3].piece = this.board[from.row][0].piece;
+      this.board[from.row][0].piece = null;
+    }
+  }
+
+  kingIsSafeWhenPieceMoveFromTo(from: Cell, to: Cell): boolean {
+    const kingCell =
+      this.board[this.kingPos[from.piece.color][0]][
+        this.kingPos[from.piece.color][1]
+      ];
+    if (from.piece?.code === "K") {
+      //check if there is no danger for the king to move to the cell "to"
+      return (
+        this.noQueenOrBishopTargetingThisCellForKing(to, from, to) &&
+        this.noQueenOrRookTargetingThisCellForKing(to, from, to) &&
+        this.noPawnTargetingThisCellForKing(to, from, to) &&
+        this.noKnightTargetingThisCellForKing(to, from, to) &&
+        this.noKingTargetingThisCellForKing(to, from, to)
+      );
+    } else {
+      //check if move a piece don't put the king in danger
+      return (
+        this.noQueenOrBishopTargetingThisCellForKing(kingCell, from, to) &&
+        this.noQueenOrRookTargetingThisCellForKing(kingCell, from, to) &&
+        this.noPawnTargetingThisCellForKing(kingCell, from, to) &&
+        this.noKnightTargetingThisCellForKing(kingCell, from, to)
+      );
+    }
+  }
+
+  /**
+   * return false if after the move the king is in danger targeting by a bishop or a queen
+   * @param kingCell Cell where the king is after the move
+   * @param movingPieceFrom Cell where the piece is before the move
+   * @param movingPieceTo Cell where the piece is before the after the move
+   * @returns
+   */
+
+  noQueenOrBishopTargetingThisCellForKing(
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
+    const directions = [
+      [1, -1],
+      [-1, 1],
+      [1, 1],
+      [-1, -1],
+    ];
+
+    return this.noPieceWhiteManyMovesByDirection(
+      directions,
+      ["B", "Q"],
+      kingCell,
+      movingPieceFrom,
+      movingPieceTo
+    );
+  }
+
+  /**
+   * return false if after the move the king is in danger targeting by a rook or a queen
+   * @param kingCell Cell where the king is after the move
+   * @param movingPieceFrom Cell where the piece is before the move
+   * @param movingPieceTo Cell where the piece is before the after the move
+   * @returns
+   */
+  noQueenOrRookTargetingThisCellForKing(
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
+    const directions = [
+      [0, -1],
+      [0, 1],
+      [1, 0],
+      [-1, 0],
+    ];
+
+    return this.noPieceWhiteManyMovesByDirection(
+      directions,
+      ["R", "Q"],
+      kingCell,
+      movingPieceFrom,
+      movingPieceTo
+    );
+  }
+
+  /**
+   * return false if the king is in danger targeting by a pawn after a move of the piece of same color
+   * @param kingCell Cell where the king is after the move
+   * @param movingPieceFrom Cell where the piece is before the move
+   * @param movingPieceTo Cell where the piece is before the after the move
+   * @returns
+   */
+
+  noPawnTargetingThisCellForKing(
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
+    const directions =
+      movingPieceFrom.piece?.color === "white"
+        ? [
+            [1, -1],
+            [-1, -1],
+          ]
+        : [
+            [-1, 1],
+            [1, 1],
+          ];
+
+    return this.noPieceWhiteOneMoveByDirection(
+      directions,
+      "P",
+      kingCell,
+      movingPieceFrom,
+      movingPieceTo
+    );
+  }
+
+  /**
+   * return false if the king is in danger targeting by knight after a move of the piece of same color
+   * @param kingCell Cell where the king is after the move
+   * @param movingPieceFrom Cell where the piece is before the move
+   * @param movingPieceTo Cell where the piece is before the after the move
+   * @returns
+   */
+
+  noKnightTargetingThisCellForKing(
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
+    const directions = [
+      [2, 1],
+      [2, -1],
+      [1, 2],
+      [1, -2],
+      [-2, 1],
+      [-2, -1],
+      [-1, 2],
+      [-1, -2],
+    ];
+
+    return this.noPieceWhiteOneMoveByDirection(
+      directions,
+      "N",
+      kingCell,
+      movingPieceFrom,
+      movingPieceTo
+    );
+  }
+  noKingTargetingThisCellForKing(
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
+    const directions = [
+      [1, 1],
+      [1, -1],
+      [-1, 1],
+      [-1, -1],
+      [0, 1],
+      [0, -1],
+      [-1, 0],
+      [1, 0],
+    ];
+
+    return this.noPieceWhiteOneMoveByDirection(
+      directions,
+      "K",
+      kingCell,
+      movingPieceFrom,
+      movingPieceTo
+    );
+  }
+  /**
+   *  return false if the king is in danger targeting by a piece with one move by direction, after a move of the piece of same color
+   * @param directions all possible direction from witch the king can get targeting by the piece
+   * @param code the code of the piece targeting
+   * @param kingCell Cell where the king is after the move
+   * @param movingPieceFrom Cell where the piece is before the move
+   * @param movingPieceTo Cell where the piece is before the after the move
+   * @returns
+   */
+  noPieceWhiteOneMoveByDirection(
+    directions: number[][],
+    code: string,
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
+    for (const [dx, dy] of directions) {
+      const next_row = kingCell.row + dy;
+      const next_col = kingCell.column + dx;
+      if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+        continue;
+      }
+
+      if (!this.board[next_row][next_col].isEmpty) {
+        if (this.board[next_row][next_col] === movingPieceTo) {
+          // piece can take to protege the king
+          continue;
+        }
+
+        if (
+          this.board[next_row][next_col].piece?.code === code &&
+          movingPieceFrom.piece?.color !==
+            this.board[next_row][next_col].piece?.color
+        ) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   *  return false if the king is in danger targeting by a piece with many move by direction, after a move of the piece of same color
+   * @param directions all possible direction from witch the king can get targeting by the piece
+   * @param code the code of the piece targeting
+   * @param kingCell Cell where the king is after the move
+   * @param movingPieceFrom Cell where the piece is before the move
+   * @param movingPieceTo Cell where the piece is before the after the move
+   * @returns
+   */
+  noPieceWhiteManyMovesByDirection(
+    directions: number[][],
+    code: string[],
+    kingCell: Cell,
+    movingPieceFrom: Cell,
+    movingPieceTo: Cell
+  ): boolean {
+    for (const [dx, dy] of directions) {
+      let next_row = kingCell.row;
+      let next_col = kingCell.column;
+      while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
+        next_row += dy;
+        next_col += dx;
+
+        if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+          break;
+        }
+
+        if (!this.board[next_row][next_col].isEmpty) {
+          if (this.board[next_row][next_col] === movingPieceFrom) {
+            // we supose that the piece had moved and there is no piece there
+            continue;
+          } else if (this.board[next_row][next_col] === movingPieceTo) {
+            // piece can take to protege the king
+            break;
+          }
+
+          if (
+            movingPieceFrom.piece.color !==
+              this.board[next_row][next_col].piece?.color &&
+            code.includes(this.board[next_row][next_col].piece.code)
+          ) {
+            return false;
+          } else {
+            break;
+          }
+        } else {
+          if (this.board[next_row][next_col] === movingPieceTo) {
+            // New position cover the king
+            break;
+          }
+        }
+      }
+    }
+    return true;
+  }
+}
+
+// File: src/core/config/initialBoard.ts
+
+import Cell  from "../types/Cell.ts";
+import { initialPositions } from "./variables/pieces.ts";
+
+
+function createBoard() {
+  const board = new Array<Cell[]>(8);
+
+  for (let row = 0; row < 8; row++) {
+    board[row] = new Array(8);
+    for (let col = 0; col < 8; col++) {
+      board[row][col] = new Cell(
+        row,
+        col,
+        (row + col) % 2 === 1 ? "black" : "white",
+        board
+      );
+    }
+  }
+
+  for (let row in initialPositions) {
+    for (let col = 0; col < 8; col++) {
+      board[row][col].piece = initialPositions[row][col];
+    }
+  }
+  return board;
+}
+
+export { createBoard };
+
+// File: src/core/config/pieces/piece.ts
+
+import King from "../../types/King.ts";
+import Queen from "../../types/Queen.ts";
+import Bishop from "../../types/Bishop.ts";
+import Knight from "../../types/Knight.ts";
+import Rook from "../../types/Rook.ts";
+import Pawn from "../../types/Pawn.ts";
+
+
+export {King, Queen, Bishop, Knight, Rook, Pawn} 
+// File: src/core/config/variables/pieces.ts
+import { Bishop, King, Knight, Pawn, Queen, Rook } from "../pieces/piece.ts";
+
+const whiteRook1 = new Rook("white", "/images/pions/Rw.png");
+const whiteKnight1 = new Knight("white", "/images/pions/Nw.png");
+const whiteBishop1 = new Bishop("white", "/images/pions/Bw.png");
+const whiteQueen = new Queen("white", "/images/pions/Qw.png");
+const whiteKing = new King("white", "/images/pions/Kw.png");
+const whiteBishop2 = new Bishop("white", "/images/pions/Bw.png");
+const whiteKnight2 = new Knight("white", "/images/pions/Nw.png");
+const whiteRook2 = new Rook("white", "/images/pions/Rw.png");
+
+const blackRook1 = new Rook("black", "/images/pions/Rb.png");
+const blackRook2 = new Rook("black", "/images/pions/Rb.png");
+const blackKnight1 = new Knight("black", "/images/pions/Nb.png");
+const blackKnight2 = new Knight("black", "/images/pions/Nb.png");
+const blackBishop1 = new Bishop("black", "/images/pions/Bb.png");
+const blackBishop2 = new Bishop("black", "/images/pions/Bb.png");
+const blackQueen = new Queen("black", "/images/pions/Qb.png");
+const blackKing = new King("black", "/images/pions/Kb.png");
+
+const whitePawn1 = new Pawn("white", "/images/pions/Pw.png");
+const whitePawn2 = new Pawn("white", "/images/pions/Pw.png");
+const whitePawn3 = new Pawn("white", "/images/pions/Pw.png");
+const whitePawn4 = new Pawn("white", "/images/pions/Pw.png");
+const whitePawn5 = new Pawn("white", "/images/pions/Pw.png");
+const whitePawn6 = new Pawn("white", "/images/pions/Pw.png");
+const whitePawn7 = new Pawn("white", "/images/pions/Pw.png");
+const whitePawn8 = new Pawn("white", "/images/pions/Pw.png");
+
+const blackPawn1 = new Pawn("black", "/images/pions/Pb.png");
+const blackPawn2 = new Pawn("black", "/images/pions/Pb.png");
+const blackPawn3 = new Pawn("black", "/images/pions/Pb.png");
+const blackPawn4 = new Pawn("black", "/images/pions/Pb.png");
+const blackPawn5 = new Pawn("black", "/images/pions/Pb.png");
+const blackPawn6 = new Pawn("black", "/images/pions/Pb.png");
+const blackPawn7 = new Pawn("black", "/images/pions/Pb.png");
+const blackPawn8 = new Pawn("black", "/images/pions/Pb.png");
+
+const initialPositions = {
+  0: [
+    blackRook1,
+    blackKnight1,
+    blackBishop1,
+    blackQueen,
+    blackKing,
+    blackBishop2,
+    blackKnight2,
+    blackRook2,
+  ],
+  1: [
+    blackPawn1,
+    blackPawn2,
+    blackPawn3,
+    blackPawn4,
+    blackPawn5,
+    blackPawn6,
+    blackPawn7,
+    blackPawn8,
+  ],
+  6: [
+    whitePawn1,
+    whitePawn2,
+    whitePawn3,
+    whitePawn4,
+    whitePawn5,
+    whitePawn6,
+    whitePawn7,
+    whitePawn8,
+  ],
+  7: [
+    whiteRook1,
+    whiteKnight1,
+    whiteBishop1,
+    whiteQueen,
+    whiteKing,
+    whiteBishop2,
+    whiteKnight2,
+    whiteRook2,
+  ],
+};
+
+export { initialPositions };
+
+// File: src/core/icons/icons.jsx
+const Clock = (props) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 16 16"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M13.5 8a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0M8.75 4.5a.75.75 0 0 0-1.5 0V8a.75.75 0 0 0 .3.6l2 1.5a.75.75 0 1 0 .9-1.2l-1.7-1.275z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+};
+
+const Close = (props) => {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+      <path
+        fill="currentColor"
+        d="M195.2 195.2a64 64 0 0 1 90.496 0L512 421.504L738.304 195.2a64 64 0 0 1 90.496 90.496L602.496 512L828.8 738.304a64 64 0 0 1-90.496 90.496L512 602.496L285.696 828.8a64 64 0 0 1-90.496-90.496L421.504 512L195.2 285.696a64 64 0 0 1 0-90.496"
+      />
+    </svg>
+  );
+};
+export { Clock, Close };
+
+// File: src/core/types/Bishop.ts
+import Cell from "./Cell";
+import IPiece from "./IPiece";
+import { BoardType, Color } from "./Type";
+
+export default class Bishop implements IPiece {
+  color: Color;
+  img: string;
+  isFirstMove: boolean = true;
+  name: string = "Bishop";
+  code: string = "B";
+  value: number = 3;
+  enPassant: Cell | null;
+
+  constructor(color: Color, img: string) {
+    this.color = color;
+    this.img = img;
+  }
+
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    return [];
+  }
+
+  getPossiblesMove(from: Cell, board: BoardType): Cell[] {
+    const directions = [
+      [1, -1],
+      [-1, 1],
+      [1, 1],
+      [-1, -1],
+    ];
+    const ans: Cell[] = [];
+
+    for (const [dx, dy] of directions) {
+      let next_row = from.row;
+      let next_col = from.column;
+      while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
+        next_row += dy;
+        next_col += dx;
+
+        if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+          break;
+        }
+
+        if (board[next_row][next_col].isEmpty) {
+          ans.push(board[next_row][next_col]);
+        } else {
+          if (from.piece?.color !== board[next_row][next_col].piece?.color) {
+            ans.push(board[next_row][next_col]);
+          }
+          break;
+        }
+      }
+    }
+
+    return ans;
+  }
+}
+
+// File: src/core/types/Cell.ts
+import IPiece from "./IPiece";
+import { BoardType, Color } from "./Type";
+
+export default class Cell {
+  row: number;
+  column: number;
+  piece: IPiece | null = null;
+  color: Color;
+  board: BoardType;
+
+  constructor(row: number, col: number, color: Color, board: BoardType) {
+    this.row = row;
+    this.column = col;
+    this.color = color;
+    this.board = board;
+  }
+
+  movesPossible(): Cell[] {
+    if (this.piece == null) {
+      return [];
+    }
+    return this.piece.getPossiblesMove(this, this.board);
+  }
+
+  movePieceTo(cell: Cell): boolean {
+    const possible = this.piece?.getPossiblesMove(this, this.board);
+    if (this.piece == null || !possible?.includes(cell)) {
+      return false;
+    }
+
+    this.piece.isFirstMove = false;
+    cell.piece = this.piece;
+    this.piece = null;
+    return true;
+  }
+
+  get isEmpty() {
+    return this.piece == null;
+  }
+}
+
+// File: src/core/types/IPiece.ts
+import Cell from "./Cell";
+import { BoardType, Color } from "./Type";
+
+export default interface IPiece {
+  color: Color;
+  img: string;
+  isFirstMove: boolean;
+  name: string;
+  code: string;
+  value: number;
+  enPassant: Cell | null;
+
+  getPossiblesMove(from: Cell, board: BoardType): Cell[];
+  getNeighbors(board: BoardType, row: number, col: number): Cell[];
+}
+
+// File: src/core/types/King.ts
+import Cell from "./Cell";
+import IPiece from "./IPiece";
+import { BoardType, Color } from "./Type";
+
+export default class King implements IPiece {
+  color: Color;
+  img: string;
+  isFirstMove: boolean = true;
+  name: string = "King";
+  code: string = "K";
+  value: number = 0;
+  enPassant: Cell | null;
+
+  constructor(color: Color, img: string) {
+    this.color = color;
+    this.img = img;
+  }
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    return [];
+  }
+
+  isfirstMove: boolean;
+
+  getPossiblesMove(from: Cell, board: BoardType): Cell[] {
+    const ans: Cell[] = [];
+    const directions = [
+      [0, 1],
+      [0, -1],
+      [1, 0],
+      [1, 1],
+      [1, -1],
+      [-1, 0],
+      [-1, 1],
+      [-1, -1],
+    ];
+
+    for (const [dx, dy] of directions) {
+      const next_row = from.row + dy;
+      const next_col = from.column + dx;
+
+      if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+        continue;
+      }
+
+      if (board[next_row][next_col].isEmpty) {
+        ans.push(board[next_row][next_col]);
+      } else {
+        if (from.piece?.color !== board[next_row][next_col].piece?.color) {
+          ans.push(board[next_row][next_col]);
+        }
+      }
+    }
+
+    return ans.concat(this.roque(from, board));
+  }
+
+  roque(from: Cell, board: BoardType): Cell[] {
+    if (!this.isFirstMove) return [];
+
+    const possibleMoves: Cell[] = [];
+    const directions = [-2, 2]; // two move possible bigrook and small rook
+
+    for (const dx of directions) {
+      const direction = Math.abs(dx) / dx; // Direction of movement
+
+      let next_col = from.column + direction;
+      while (0 < next_col && next_col < 7) {
+        //Check if not piece between king and rook
+        if (!board[from.row][next_col].isEmpty) {
+          break;
+        }
+
+        next_col += direction;
+      }
+
+      const cellRook = board[from.row][next_col]; // it might not be the rook cell
+
+      if (
+        [0, 7].includes(next_col) && //check if it is a rook cell
+        !cellRook.isEmpty &&
+        cellRook.piece?.isFirstMove
+      ) {
+        possibleMoves.push(board[from.row][from.column + dx]);
+      }
+    }
+
+    return possibleMoves;
+  }
+}
+
+// File: src/core/types/Knight.ts
+import Cell from "./Cell";
+import IPiece from "./IPiece";
+import { BoardType, Color } from "./Type";
+
+export default class Knight implements IPiece {
+  color: Color;
+  img: string;
+  isFirstMove: boolean = true;
+  name: string = "Knight";
+  code: string = "N";
+  value: number = 3;
+  enPassant: Cell | null;
+
+  constructor(color: Color, img: string) {
+    this.color = color;
+    this.img = img;
+    this.isFirstMove = true;
+  }
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    return [];
+  }
+
+  getPossiblesMove(from: Cell, board: BoardType): Cell[] {
+    const ans: Cell[] = [];
+    const directions = [
+      [2, 1],
+      [2, -1],
+      [1, 2],
+      [1, -2],
+      [-2, 1],
+      [-2, -1],
+      [-1, 2],
+      [-1, -2],
+    ];
+
+    for (const [dx, dy] of directions) {
+      const next_row = from.row + dy;
+      const next_col = from.column + dx;
+
+      if (this.valid(next_row, next_col, from, board)) {
+        ans.push(board[next_row][next_col]);
+      }
+    }
+
+    return ans;
+  }
+
+  valid = (row: number, col: number, from: Cell, board: BoardType) => {
+    if (!(0 <= row && row < 8 && 0 <= col && col < 8)) {
+      return false;
+    }
+
+    if (from.piece?.color === board[row][col].piece?.color) {
+      return false;
+    }
+
+    return true;
+  };
+}
+
+// File: src/core/types/Pawn.ts
+import Cell from "./Cell";
+import IPiece from "./IPiece";
+import { BoardType, Color } from "./Type";
+
+export default class Pawn implements IPiece {
+  color: Color;
+  img: string;
+  isFirstMove: boolean = true;
+  name: string = "Pawn";
+  code: string = "P";
+  value: number = 1;
+  enPassant: Cell | null = null;
+
+  constructor(color: Color, img: string) {
+    this.color = color;
+    this.img = img;
+  }
+
+  getPossiblesMove(from: Cell, board: BoardType): Cell[] {
+    const possibleMove: Cell[] = [];
+
+    const directions =
+      this.color === "white"
+        ? [
+            [0, -1],
+            [1, -1],
+            [-1, -1],
+          ]
+        : [
+            [0, 1],
+            [-1, 1],
+            [1, 1],
+          ];
+
+    if (this.color === "white" && from.row === 6) {
+      directions.push([0, -2]);
+    }
+    if (this.color === "black" && from.row === 1) {
+      directions.push([0, 2]);
+    }
+
+    for (const [dx, dy] of directions) {
+      const next_row = from.row + dy;
+      const next_col = from.column + dx;
+
+      if (this.validPawn(next_row, next_col, from, board)) {
+        possibleMove.push(board[next_row][next_col]);
+      }
+    }
+
+    return possibleMove;
+  }
+  validPawn = (
+    row: number,
+    col: number,
+    from: Cell,
+    board: BoardType
+  ): boolean => {
+    if (!(0 <= row && row < 8 && 0 <= col && col < 8)) {
+      //out of bound
+      return false;
+    }
+
+    if (board[row][col].piece) {
+      // there is a piece on the targe cell (take in diagonale)
+      if (from.piece?.color === board[row][col].piece?.color) {
+        return false;
+      }
+
+      if (from.column === col) {
+        return false;
+      }
+    } else {
+      if (col !== from.column) {
+        return false;
+      } else {
+        if (from.row === 6 && row === 4 && !board[5][col].isEmpty) {
+          return false;
+        }
+
+        if (from.row === 1 && row === 3 && !board[2][col].isEmpty) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return true;
+  };
+
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    const neighbors: Cell[] = [];
+
+    if (
+      col + 1 < 8 &&
+      !board[row][col + 1].isEmpty &&
+      board[row][col + 1].piece?.color !== this.code &&
+      board[row][col + 1].piece?.code === "P"
+    ) {
+      neighbors.push(board[row][col + 1]);
+    }
+
+    if (
+      col - 1 >= 0 &&
+      !board[row][col - 1].isEmpty &&
+      board[row][col - 1].piece?.color !== this.color &&
+      board[row][col - 1].piece?.code === "P"
+    ) {
+      neighbors.push(board[row][col - 1]);
+    }
+
+    return neighbors;
+  }
+}
+
+// File: src/core/types/Player.ts
+import { Color } from "./Type";
+
+export default class Player {
+  name: string;
+  color: Color;
+}
+
+// File: src/core/types/Queen.ts
+import Cell from "./Cell";
+import IPiece from "./IPiece";
+import { BoardType, Color } from "./Type";
+
+export default class Queen implements IPiece {
+  color: Color;
+  img: string;
+  isFirstMove: boolean = true;
+  name: string = "Queen";
+  code: string = "Q";
+  value: number = 10;
+  enPassant: Cell | null;
+
+  constructor(color: Color, img: string) {
+    this.color = color;
+    this.img = img;
+  }
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    return [];
+  }
+
+  getPossiblesMove(from: Cell, board: BoardType): Cell[] {
+    const directions = [
+      [0, -1],
+      [0, 1],
+      [1, 0],
+      [-1, 0],
+      [1, -1],
+      [-1, 1],
+      [1, 1],
+      [-1, -1],
+    ];
+
+    const ans: Cell[] = [];
+
+    for (const [dx, dy] of directions) {
+      let next_row = from.row;
+      let next_col = from.column;
+      while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
+        next_row += dy;
+        next_col += dx;
+
+        if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+          break;
+        }
+
+        if (board[next_row][next_col].isEmpty) {
+          ans.push(board[next_row][next_col]);
+        } else {
+          if (from.piece?.color !== board[next_row][next_col].piece?.color) {
+            ans.push(board[next_row][next_col]);
+          }
+          break;
+        }
+      }
+    }
+
+    return ans;
+  }
+}
+
+// File: src/core/types/Rook.ts
+import Cell from "./Cell";
+import IPiece from "./IPiece";
+import { BoardType, Color } from "./Type";
+
+export default class Rook implements IPiece {
+  color: Color;
+  img: string;
+  isFirstMove: boolean = true;
+  name: string = "Rook";
+  code: string = "R";
+  value: number = 5;
+  enPassant: Cell | null;
+
+  constructor(color: Color, img: string) {
+    this.color = color;
+    this.img = img;
+  }
+  getNeighbors(board: BoardType, row: number, col: number): Cell[] {
+    return [];
+  }
+
+  isfirstMove: boolean;
+
+  getPossiblesMove(from: Cell, board: BoardType): Cell[] {
+    const directions = [
+      [0, -1],
+      [0, 1],
+      [1, 0],
+      [-1, 0],
+    ];
+
+    const ans: Cell[] = [];
+
+    for (const [dx, dy] of directions) {
+      let next_row = from.row;
+      let next_col = from.column;
+      while (0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8) {
+        next_row += dy;
+        next_col += dx;
+
+        if (!(0 <= next_row && next_row < 8 && 0 <= next_col && next_col < 8)) {
+          break;
+        }
+
+        if (board[next_row][next_col].isEmpty) {
+          ans.push(board[next_row][next_col]);
+        } else {
+          if (from.piece?.color !== board[next_row][next_col].piece?.color) {
+            ans.push(board[next_row][next_col]);
+          }
+          break;
+        }
+      }
+    }
+
+    return ans;
+  }
+}
+
+// File: src/core/types/Type.ts
+import Game from "../config/Game";
+import Cell from "./Cell";
+
+export type Color = "white" | "black";
+export type BoardType = Cell[][];
+
+export interface BoardProps {
+  game: Game;
+}
+
+// File: src/index.css
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+// File: src/index.js
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import App from "./App";
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+

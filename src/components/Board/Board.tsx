@@ -3,7 +3,7 @@ import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
 import Modal from "../Modal/Modal.tsx";
 import Cell from "../../core/types/Cell.ts";
 import Game from "../../core/config/Game.ts";
-import { makeMove, setPromotion, showPosibleMove } from "./utils.ts";
+import { makeMove, showPosibleMove } from "../../core/config/utils.ts";
 import "./Board.css";
 import Player from "../../core/types/Player.ts";
 
@@ -21,21 +21,27 @@ const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
   const [promotionModale, setPromotionModale] = useState<boolean>(false);
 
   const handleClick = (cell: Cell) => {
+    if (promotionModale) return;
     if (game.isGameOver()) return;
+
+    if (!prevCell && game.whoPlay.color !== cell.piece?.color) {
+      return;
+    }
+
     if (prevCell && !prevCell.isEmpty) {
-      makeMove(prevCell, cell, game, setPossibleMoves, setPrevCell);
-    } else {
-      if (game.whoPlay.color !== cell.piece?.color) {
+      if (game.isPromotion(prevCell, cell)) {
+        console.log("promotion");
+        setPromotionModale(true);
         return;
       }
+      makeMove(prevCell, cell, game, setPossibleMoves, setPrevCell);
+    } else {
       setCurrent(cell);
       showPosibleMove(cell, game, setPossibleMoves, setPrevCell);
     }
   };
 
-  useEffect(() => {
-    if (game.toPromote) setPromotionModale(true);
-  }, [game.toPromote]);
+  useEffect(() => {}, [promotionModale]);
 
   useEffect(() => {
     if (game.isGameOver()) {
@@ -44,7 +50,12 @@ const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
   }, [game, game.whoPlay]);
 
   const setPromotionCall = (cell: Cell | null, code: string) => {
-    setPromotion(cell, code, game, setPromotionModale);
+    console.log("ici");
+    if (prevCell === null || cell === null) return;
+    game.movePieceFromCellTo(prevCell, cell, code);
+    setPossibleMoves([]);
+    setPrevCell(null);
+    setPromotionModale(false);
   };
 
   return (
@@ -88,33 +99,36 @@ const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
         setEndGameModal={setEndGameModal}
       />
 
-      {promotionModale && game.toPromote && game.toPromote.piece ? (
-        <div className="promotion">
-          <img
-            className="piece"
-            src={`/images/pions/N${game.toPromote.piece.color.charAt(0)}.png`}
-            alt={"Knight"}
-            onClick={() => setPromotionCall(game.toPromote, "N")}
-          />
-          <img
-            className="piece"
-            src={`/images/pions/B${game.toPromote.piece.color.charAt(0)}.png`}
-            alt={"Bishop"}
-            onClick={() => setPromotionCall(game.toPromote, "B")}
-          />
-          <img
-            className="piece"
-            src={`/images/pions/R${game.toPromote.piece.color.charAt(0)}.png`}
-            alt={"Rook"}
-            onClick={() => setPromotionCall(game.toPromote, "R")}
-          />
-          <img
-            className="piece"
-            src={`/images/pions/Q${game.toPromote.piece.color.charAt(0)}.png`}
-            alt={"Queen"}
-            onClick={() => setPromotionCall(game.toPromote, "Q")}
-          />
-        </div>
+      {promotionModale && game.toPromote ? (
+        <>
+          <div className="promotion-background"></div>
+          <div className="promotion">
+            <img
+              className="piece"
+              src={`/images/pions/N${game.whoPlay.color.charAt(0)}.png`}
+              alt={"Knight"}
+              onClick={() => setPromotionCall(game.toPromote, "N")}
+            />
+            <img
+              className="piece"
+              src={`/images/pions/B${game.whoPlay.color.charAt(0)}.png`}
+              alt={"Bishop"}
+              onClick={() => setPromotionCall(game.toPromote, "B")}
+            />
+            <img
+              className="piece"
+              src={`/images/pions/R${game.whoPlay.color.charAt(0)}.png`}
+              alt={"Rook"}
+              onClick={() => setPromotionCall(game.toPromote, "R")}
+            />
+            <img
+              className="piece"
+              src={`/images/pions/Q${game.whoPlay.color.charAt(0)}.png`}
+              alt={"Queen"}
+              onClick={() => setPromotionCall(game.toPromote, "Q")}
+            />
+          </div>
+        </>
       ) : (
         <></>
       )}
@@ -127,18 +141,14 @@ const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
         >
           {game.winner === null ? (
             <div className="win">🫱🏿‍🫲🏻</div>
-          ) : game.winner === currentPlayer ? (
+          ) : game.winner === game.player1 ? (
             <div className="win">🎉</div>
           ) : (
             <div className="win">😭</div>
           )}
         </Modal>
       ) : (
-        <input
-          value="menu"
-          type="button"
-          onClick={() => setEndGameModal(true)}
-        />
+        <></>
       )}
     </div>
   );
