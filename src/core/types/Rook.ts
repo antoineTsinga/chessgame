@@ -19,8 +19,6 @@ export default class Rook implements IPiece {
     return [];
   }
 
-  isfirstMove: boolean;
-
   getPossiblesMove(from: Cell, board: BoardType): Cell[] {
     const directions = [
       [0, -1],

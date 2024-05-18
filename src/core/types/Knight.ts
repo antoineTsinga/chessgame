@@ -14,7 +14,6 @@ export default class Knight implements IPiece {
   constructor(color: Color, img: string) {
     this.color = color;
     this.img = img;
-    this.isFirstMove = true;
   }
   getNeighbors(board: BoardType, row: number, col: number): Cell[] {
     return [];

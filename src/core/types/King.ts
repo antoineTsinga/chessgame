@@ -19,8 +19,6 @@ export default class King implements IPiece {
     return [];
   }
 
-  isfirstMove: boolean;
-
   getPossiblesMove(from: Cell, board: BoardType): Cell[] {
     const ans: Cell[] = [];
     const directions = [

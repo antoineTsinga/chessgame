@@ -17,6 +17,7 @@ export default class Game {
   whoPlay: Player;
   toPromote: Cell | null = null;
   LastFiftyMoveWithoutTake: number[] = [];
+  numberFullMoves: number = 1;
   timers: { black: number; white: number } = { black: 600, white: 600 };
   takenPieces: { black: IPiece[]; white: IPiece[] } = { black: [], white: [] };
   kingPos: { white: [number, number]; black: [number, number] } = {
@@ -37,9 +38,6 @@ export default class Game {
     this.board = createBoard();
   }
 
-  fen(): string {
-    return "";
-  }
   getOpponent(player: Player): Player {
     return this.player1 === player ? this.player2 : this.player1;
   }
@@ -313,7 +311,11 @@ export default class Game {
 
     this.history.push(this.stringifyBoard());
 
+    if (this.whoPlay.color === "black") this.numberFullMoves += 1; //count full moves
+
     this.changeTurn(); //change turn
+
+    console.log(this.generateFEN());
 
     if (to.piece?.code === "K") {
       //update king position
@@ -662,5 +664,115 @@ export default class Game {
       }
     }
     return true;
+  }
+
+  generateFEN(): string {
+    const board = this.board.map((cellRow) =>
+      cellRow.map((cell) => {
+        if (!cell.piece) return "";
+        const symbol =
+          cell.piece.color === "black"
+            ? cell.piece.code.toLowerCase()
+            : cell.piece.code;
+        return symbol;
+      })
+    );
+    let castlingRights = "";
+    let enPassant = "-";
+
+    const pieces = this.board.flat().filter((cell) => cell.piece);
+
+    // Déterminer les droits de roque
+    const whiteKing = pieces.find(
+      (p) => p.piece?.code === "K" && p.piece.color === "white"
+    );
+    const blackKing = pieces.find(
+      (p) => p.piece?.code === "K" && p.piece.color === "black"
+    );
+    const whiteRooks = pieces.filter(
+      (p) => p.piece?.code === "R" && p.piece.color === "white"
+    );
+    const blackRooks = pieces.filter(
+      (p) => p.piece?.code === "R" && p.piece.color === "black"
+    );
+
+    if (whiteKing && whiteKing.piece && whiteKing.piece.isFirstMove) {
+      console.log("ok ok");
+      if (
+        whiteRooks.some(
+          (r) => r.row === 7 && r.column === 7 && r.piece?.isFirstMove
+        )
+      ) {
+        castlingRights += "K";
+        console.log("ok");
+      }
+      if (
+        whiteRooks.some(
+          (r) => r.row === 7 && r.column === 0 && r.piece?.isFirstMove
+        )
+      ) {
+        castlingRights += "Q";
+      }
+    }
+    if (blackKing && blackKing.piece && blackKing.piece.isFirstMove) {
+      if (
+        blackRooks.some(
+          (r) => r.row === 0 && r.column === 7 && r.piece?.isFirstMove
+        )
+      )
+        castlingRights += "k";
+      if (
+        blackRooks.some(
+          (r) => r.row === 0 && r.column === 0 && r.piece?.isFirstMove
+        )
+      )
+        castlingRights += "q";
+    }
+
+    if (!castlingRights) castlingRights = "-";
+
+    // Déterminer la prise en passant
+    const enPassantPawn = pieces.find(
+      (p) => p.piece?.code === "P" && p.piece.enPassant
+    );
+    if (enPassantPawn && enPassantPawn.piece) {
+      const enPassantRow =
+        enPassantPawn.piece.color === "white"
+          ? enPassantPawn.row - 1
+          : enPassantPawn.row + 1;
+      const enPassantCol = enPassantPawn.column;
+      enPassant = `${String.fromCharCode("a".charCodeAt(0) + enPassantCol)}${
+        8 - enPassantRow
+      }`;
+    }
+
+    // Générer la partie position de la FEN
+    const fenPosition = board
+      .map((row) => {
+        let emptyCount = 0;
+        return (
+          row
+            .map((square) => {
+              if (square === "") {
+                emptyCount++;
+                return "";
+              } else {
+                const result =
+                  emptyCount > 0 ? `${emptyCount}${square}` : square;
+                emptyCount = 0;
+                return result;
+              }
+            })
+            .join("") + (emptyCount > 0 ? emptyCount : "")
+        );
+      })
+      .join("/");
+
+    // Combiner toutes les parties pour former la FEN
+    return `${fenPosition} ${this.whoPlay.color.charAt(
+      0
+    )} ${castlingRights} ${enPassant} ${this.LastFiftyMoveWithoutTake.length} ${
+      this.numberFullMoves
+    }`;
   }
 }
