@@ -7,3 +7,9 @@ export type BoardType = Cell[][];
 export interface BoardProps {
   game: Game;
 }
+
+export type Move = {
+  from: number[];
+  to: number[];
+  promotion: string | null;
+};

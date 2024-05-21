@@ -9,21 +9,25 @@ export interface BoardProps {
   game: Game;
   player: Player;
   setEndGameModal: (value: boolean) => void;
+  startGame: boolean;
 }
 
 const PlayerInfo: React.FC<BoardProps> = ({
   game,
   player,
   setEndGameModal,
+  startGame,
 }) => {
   const [active, setActive] = useState<boolean>(false);
   const [time, setTime] = useState<number>(game.timers[player.color]);
   const [advantage, setAdvantage] = useState<number>(0);
+  const [startTimer, setStartTimer] = useState<boolean>(false);
 
   const colortakenPieces: Color = game.getOpponent(player).color;
   const adversaryColorTakenPieces: Color = player.color;
 
   useEffect(() => {
+    if (!startTimer) return;
     const intervalId = setInterval(() => {
       game.timers[player.color] = Math.max(game.timers[player.color] - 1);
       setTime((prevSeconds) => Math.max(0, prevSeconds - 1));
@@ -60,7 +64,13 @@ const PlayerInfo: React.FC<BoardProps> = ({
     player,
     setEndGameModal,
     time,
+    startTimer,
   ]);
+
+  useEffect(() => {
+    console.log("start here", startGame);
+    if (startGame) setStartTimer(true);
+  }, [startGame]);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);

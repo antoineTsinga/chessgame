@@ -1,15 +1,15 @@
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router } from "react-router-dom";
 import "./App.css";
-import Board from "./components/Board/Board.tsx";
-import Login from "./components/Login/Login.tsx";
-import Game from "./core/config/Game.ts";
+
+import Layout from "./components/Layout/Layout.jsx";
 
 function App() {
-  const game = new Game("player1");
-  game.player2.name = "player2";
   return (
     <div className="App">
-      {/* <Login /> */}
-      <Board game={game} current={game.player1} />
+      <Router>
+        <Layout />
+      </Router>
     </div>
   );
 }

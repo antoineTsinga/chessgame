@@ -1,4 +1,4 @@
-import { BoardType, Color } from "../types/Type";
+import { BoardType, Color, Move } from "../types/Type";
 import Player from "../types/Player.ts";
 import { createBoard } from "./initialBoard.ts";
 import IPiece from "../types/IPiece.ts";
@@ -25,14 +25,17 @@ export default class Game {
     black: [0, 4],
   };
 
-  constructor(namePlayer1: string) {
-    const color: { 0: Color; 1: Color } = { 0: "white", 1: "black" };
-    const random = Math.round(Math.random());
-    this.player1.color = color[random];
-    this.player1.name = namePlayer1;
-    this.player2.color = color[1 - random];
+  constructor(namePlayer1: string, color: Color) {
+    const colorOpponent: { black: Color; white: Color } = {
+      black: "white",
+      white: "black",
+    };
 
-    this.whoPlay = random === 0 ? this.player1 : this.player2;
+    this.player1.color = color;
+    this.player1.name = namePlayer1;
+    this.player2.color = colorOpponent[color];
+
+    this.whoPlay = color === "white" ? this.player1 : this.player2;
     this.hostCode = Math.random().toString();
 
     this.board = createBoard();
@@ -284,8 +287,8 @@ export default class Game {
     from: Cell,
     to: Cell,
     promotion: string | null = null
-  ): boolean {
-    if (!from.piece || !this.isValidMove(from, to)) return false;
+  ): Move | null {
+    if (!from.piece || !this.isValidMove(from, to)) return null;
 
     to.piece && this.takenPieces[to.piece.color].push(to.piece); // add in stack when taken pieces
 
@@ -325,7 +328,14 @@ export default class Game {
     if (this.isGameOver()) {
       this.setWinner();
     }
-    return true;
+
+    const move = {
+      from: [from.row, from.column],
+      to: [to.row, to.column],
+      promotion,
+    };
+
+    return move;
   }
 
   makePawnMove(from: Cell, to: Cell, promotion: string | null = null) {
@@ -352,6 +362,13 @@ export default class Game {
     if (promotion) {
       this.setPromotion(to, promotion);
     }
+  }
+
+  move({ from, to, promotion }) {
+    const fromCell = this.board[from[0]][from[1]];
+    const toCell = this.board[to[0]][to[1]];
+
+    return this.movePieceFromCellTo(fromCell, toCell, promotion);
   }
 
   getImage = (type: string, colorChar0: string) =>

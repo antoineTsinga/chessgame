@@ -6,13 +6,15 @@ import Game from "../../core/config/Game.ts";
 import { makeMove, showPosibleMove } from "../../core/config/utils.ts";
 import "./Board.css";
 import Player from "../../core/types/Player.ts";
+import { Move } from "../../core/types/Type.ts";
 
 export interface BoardProps {
   game: Game;
-  currentPlayer: Player;
+  setMove: React.Dispatch<React.SetStateAction<Move | null>>;
+  startGame: boolean;
 }
 
-const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
+const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
   const [current, setCurrent] = useState<Cell | null>(null);
   const [prevCell, setPrevCell] = useState<Cell | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]);
@@ -24,17 +26,18 @@ const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
     if (promotionModale) return;
     if (game.isGameOver()) return;
 
-    if (!prevCell && game.whoPlay.color !== cell.piece?.color) {
+    if (!prevCell && game.player1.color !== cell.piece?.color) {
       return;
     }
 
+    if (game.whoPlay.color !== game.player1.color) return;
+
     if (prevCell && !prevCell.isEmpty) {
       if (game.isPromotion(prevCell, cell)) {
-        console.log("promotion");
         setPromotionModale(true);
         return;
       }
-      makeMove(prevCell, cell, game, setPossibleMoves, setPrevCell);
+      makeMove(prevCell, cell, game, setPossibleMoves, setPrevCell, setMove);
     } else {
       setCurrent(cell);
       showPosibleMove(cell, game, setPossibleMoves, setPrevCell);
@@ -50,9 +53,14 @@ const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
   }, [game, game.whoPlay]);
 
   const setPromotionCall = (cell: Cell | null, code: string) => {
-    console.log("ici");
     if (prevCell === null || cell === null) return;
-    game.movePieceFromCellTo(prevCell, cell, code);
+
+    const move = {
+      from: [prevCell.row, prevCell.column],
+      to: [cell.row, cell.column],
+      promotion: code,
+    };
+    setMove(move);
     setPossibleMoves([]);
     setPrevCell(null);
     setPromotionModale(false);
@@ -61,6 +69,7 @@ const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
   return (
     <div className="container">
       <PlayerInfo
+        startGame={startGame}
         game={game}
         player={game.player2}
         setEndGameModal={setEndGameModal}
@@ -97,6 +106,7 @@ const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
         game={game}
         player={game.player1}
         setEndGameModal={setEndGameModal}
+        startGame={startGame}
       />
 
       {promotionModale && game.toPromote ? (

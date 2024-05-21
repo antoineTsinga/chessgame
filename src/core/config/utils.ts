@@ -1,10 +1,12 @@
 import Game from "./Game.ts";
 
 import Cell from "../types/Cell.ts";
+import { Move } from "../types/Type.ts";
 
 type SetterListCell = (moves: Cell[]) => void;
 
 type SetterCell = (cell: Cell | null) => void;
+type SetterBoolean = (value: boolean) => void;
 
 /**
  * Show possibles moves that a the piece in a specific can make
@@ -38,14 +40,22 @@ const makeMove = (
   to: Cell,
   game: Game,
   setPossibleMoves: SetterListCell,
-  setPrevCell: SetterCell
+  setPrevCell: SetterCell,
+  setCurrentPlayerMove: React.Dispatch<React.SetStateAction<Move | null>>
 ) => {
   if (!from || to === from || to?.piece?.color === from?.piece?.color) {
     showPosibleMove(to, game, setPossibleMoves, setPrevCell);
     return;
   }
   setPossibleMoves([]);
-  game.movePieceFromCellTo(from, to);
+
+  const move = {
+    from: [from.row, from.column],
+    to: [to.row, to.column],
+    promotion: null,
+  };
+
+  setCurrentPlayerMove(move);
   setPrevCell(null);
 };
 
