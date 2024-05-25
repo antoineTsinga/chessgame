@@ -3,6 +3,7 @@ import { Route, Routes, useNavigate } from "react-router-dom";
 import CreateGame from "../CreateGame";
 import ChessGame from "../ChessGame";
 import WebSocketComponent from "../../core/config/WebSocketComponent.tsx";
+import { backendWebSocketUrl } from "../../core/config/backends.js";
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function Layout() {
   useEffect(() => {
     if (!roomName) return;
 
-    const ws = new WebSocket(`ws://localhost:8000/ws/game/${roomName}/`);
+    const ws = new WebSocket(`${backendWebSocketUrl}/ws/game/${roomName}/`);
     setSocket(ws);
   }, [roomName]);
 

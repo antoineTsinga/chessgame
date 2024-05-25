@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { backendUrl } from "../core/config/backends";
 
 const CreateGame = ({ setRoomName, setPlayerName, setIsHost }) => {
   const [name, setName] = useState("");
@@ -10,7 +11,7 @@ const CreateGame = ({ setRoomName, setPlayerName, setIsHost }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:8000/create_game/", {
+      const response = await fetch(`${backendUrl}/create_game/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
