@@ -9,17 +9,37 @@ export default function Layout() {
   const [playerName, setPlayerName] = useState("");
   const [isHost, setIsHost] = useState(false);
   const [roomName, setRoomName] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!roomName) return;
 
+    setLoading(true);
     const ws = new WebSocket(`${backendWebSocketUrl}/ws/game/${roomName}/`);
     setSocket(ws);
   }, [roomName]);
 
+  useEffect(() => {
+    if (!socket) return;
+    socket.onopen = () => {
+      setLoading(false);
+    };
+
+    socket.onclose = () => {
+      setLoading(false);
+      console.log("closed");
+    };
+
+    socket.onerror = () => {
+      setError(true);
+      console.log("Error");
+    };
+  }, [socket]);
+
   return (
     <div className="layout">
-      {socket ? (
+      {socket && !loading ? (
         <WebSocketComponent
           isHost={isHost}
           playerName={playerName}
@@ -31,6 +51,7 @@ export default function Layout() {
           setPlayerName={setPlayerName}
           setIsHost={setIsHost}
           setRoomName={setRoomName}
+          loading={loading}
         />
       )}
     </div>

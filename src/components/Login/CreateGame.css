@@ -1,19 +1,19 @@
 .container-home{
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: start;
     align-items: center;
+    padding: 20px;
     min-height: 100vh;
+    border: 1px solid white;
 }
 
 .title-home{
     height: 80px;
-    font-size: 1.5em;
-    letter-spacing: 0.1em;
+    font-size: 1.2em;
     display: flex;
     justify-content: center;
     align-items: center;
-
 }
 
 .image-title{
@@ -46,7 +46,6 @@
 
 .container-form-create-join{
   display: flex;
-  flex: 1;
   
   flex-direction: column;
   align-items: center;
@@ -138,7 +137,8 @@
     flex-direction: row;
     justify-content: space-around;
     align-items:center;
-    background-color: #020a17;
+
+    margin-bottom: env(safe-area-inset-bottom);
   }
   
   .footer a {

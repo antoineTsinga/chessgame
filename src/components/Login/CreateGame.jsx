@@ -1,20 +1,25 @@
-import React, { useState } from "react";
-import { backendUrl } from "../../core/config/backends";
+import React, { useEffect, useState } from "react";
+import { backendUrl, backendWebSocketUrl } from "../../core/config/backends";
 import "./CreateGame.css";
+import LoadingDot from "../../core/icons/LoadingDot";
 
-const CreateGame = ({ setRoomName, setPlayerName, setIsHost }) => {
+const CreateGame = ({ setRoomName, setPlayerName, setIsHost, loading }) => {
   const [name, setName] = useState("");
   const [hostName, setHostName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingBtn, setLoadingBtn] = useState(loading);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("create");
+  const [webSocket, setWebSocket] = useState(null);
+
+  useEffect(() => {
+    setLoadingBtn(loading);
+  }, [loading]);
 
   const handleTabClick = (section) => {
     setActiveTab(section);
   };
 
   const handleCreateGame = async () => {
-    setLoading(true);
     setError(null);
     try {
       const response = await fetch(`${backendUrl}/create_game/`, {
@@ -32,14 +37,16 @@ const CreateGame = ({ setRoomName, setPlayerName, setIsHost }) => {
         setRoomName(host);
       } else {
         setError(data.error || "Une erreur est survenue");
+        setLoadingBtn(false);
       }
     } catch (err) {
       setError("Une erreur est survenue");
+      setLoadingBtn(false);
     }
-    setLoading(false);
   };
 
   const joinGame = () => {
+    setLoadingBtn(true);
     setPlayerName(name);
     setIsHost(false);
     setRoomName(hostName);
@@ -55,17 +62,6 @@ const CreateGame = ({ setRoomName, setPlayerName, setIsHost }) => {
 
         <div className="description-home">
           <h2>Welcome to our online chess platform! </h2>
-          <p>Here's how to get started 👇</p>
-          <li>
-            <span className="bold">Create a game : </span>
-            If you'd like to start a new game, enter your name and simply click
-            on the “Create a game” button. You will have a game code.
-          </li>
-          <li>
-            <span className="bold"> Join a game : </span> If you have a game
-            code, click on “Join a game”. Enter your name, the code provided and
-            start playing immediately.
-          </li>
         </div>
       </div>
 
@@ -100,12 +96,16 @@ const CreateGame = ({ setRoomName, setPlayerName, setIsHost }) => {
               onChange={(e) => setName(e.target.value)}
             />
 
-            <input
+            <button
               className="btn"
               type="button"
-              value="Host game"
-              onClick={handleCreateGame}
-            />
+              onClick={() => {
+                setLoadingBtn(true);
+                handleCreateGame();
+              }}
+            >
+              {!loadingBtn ? "Host game" : <LoadingDot width={"40px"} />}
+            </button>
           </div>
         )}
         {activeTab === "join" && (
@@ -126,12 +126,16 @@ const CreateGame = ({ setRoomName, setPlayerName, setIsHost }) => {
               value={hostName}
               onChange={(e) => setHostName(e.target.value)}
             />
-            <input
-              onClick={joinGame}
+            <button
+              onClick={() => {
+                setLoadingBtn(true);
+                joinGame();
+              }}
               className="btn"
               type="button"
-              value="Join a game"
-            />
+            >
+              {!loading ? "Join a game" : <LoadingDot width={"40px"} />}
+            </button>
           </div>
         )}
       </div>

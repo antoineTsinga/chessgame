@@ -1,3 +1,5 @@
+import LoadingDot from "./LoadingDot";
+
 const Clock = (props) => {
   return (
     <svg
@@ -27,4 +29,5 @@ const Close = (props) => {
     </svg>
   );
 };
-export { Clock, Close };
+
+export { Clock, Close, LoadingDot };

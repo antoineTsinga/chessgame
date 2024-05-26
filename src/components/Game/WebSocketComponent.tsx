@@ -13,13 +13,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   const [startGame, setStartGame] = useState<boolean>(false);
 
   socket.onopen = () => {
-    if (isHost && !chess) {
-      const color: Color[] = ["white", "black"];
-      const random = Math.round(Math.random());
-      setChess(new Game(playerName, color[random]));
-    } else if (!isHost && !chess) {
-      getMyColor();
-    }
+    console.log("connected");
   };
 
   socket.onmessage = (event) => {
@@ -95,6 +89,18 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
       );
     }
   };
+
+  useEffect(() => {
+    if (socket.OPEN) {
+      if (isHost && !chess) {
+        const color: Color[] = ["white", "black"];
+        const random = Math.round(Math.random());
+        setChess(new Game(playerName, color[random]));
+      } else if (!isHost && !chess) {
+        getMyColor();
+      }
+    }
+  }, [socket]);
 
   useEffect(() => {
     if (move === null || !chess) return;
