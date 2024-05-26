@@ -68,7 +68,6 @@ const PlayerInfo: React.FC<BoardProps> = ({
   ]);
 
   useEffect(() => {
-    console.log("start here", startGame);
     if (startGame) setStartTimer(true);
   }, [startGame]);
 
@@ -101,7 +100,9 @@ const PlayerInfo: React.FC<BoardProps> = ({
     <div className="section-player">
       <img className="avater" src="/images/user.png" alt={player.name} />
       <div className="info-player">
-        <span>{player.name + " " + player.color}</span>
+        <span>
+          {player.name ? player.name : "Waiting for your opponent..."}
+        </span>
         <div className="pieces">
           <div className="pawn relative">{printPiece("P")}</div>
           <div className="knight relative">{printPiece("N")}</div>

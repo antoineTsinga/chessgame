@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
-import CreateGame from "../CreateGame";
-import ChessGame from "../ChessGame";
-import WebSocketComponent from "../../core/config/WebSocketComponent.tsx";
+import CreateGame from "../Login/CreateGame.jsx";
+import WebSocketComponent from "../Game/WebSocketComponent.tsx";
 import { backendWebSocketUrl } from "../../core/config/backends.js";
+import "./Layout.css";
 
 export default function Layout() {
-  const navigate = useNavigate();
   const [socket, setSocket] = useState(null);
   const [playerName, setPlayerName] = useState("");
   const [isHost, setIsHost] = useState(false);
@@ -20,7 +18,7 @@ export default function Layout() {
   }, [roomName]);
 
   return (
-    <div>
+    <div className="layout">
       {socket ? (
         <WebSocketComponent
           isHost={isHost}

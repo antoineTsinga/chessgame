@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import Game from "./Game.ts";
-import Board from "../../components/Board/Board.tsx";
-import { Color, Move } from "../types/Type";
+import Game from "../../core/config/Game.ts";
+import Board from "../Board/Board.tsx";
+import { Color, Move } from "../../core/types/Type.ts";
 import { useParams } from "react-router-dom";
-import Player from "../types/Player.ts";
+import Player from "../../core/types/Player.ts";
 
 const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   const [messages, setMessages] = useState<string[]>([]);
@@ -13,14 +13,11 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   const [startGame, setStartGame] = useState<boolean>(false);
 
   socket.onopen = () => {
-    console.log("WebSocket connected");
     if (isHost && !chess) {
       const color: Color[] = ["white", "black"];
       const random = Math.round(Math.random());
       setChess(new Game(playerName, color[random]));
-      console.log("it is host");
     } else if (!isHost && !chess) {
-      console.log("it not is host");
       getMyColor();
     }
   };
@@ -42,7 +39,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
         const players = data.content;
         const game = new Game(players.guest.name, players.guest.color);
         game.player2.name = players.host.name;
-        console.log("receve color from host");
+
         setChess(game);
         sendStartGame();
       }
@@ -51,13 +48,10 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
     }
   };
 
-  socket.onclose = () => {
-    console.log("WebSocket Disconnected");
-  };
+  socket.onclose = () => {};
 
   const getMyColor = () => {
     if (socket) {
-      console.log("find color");
       const me = new Player();
       me.name = playerName;
       socket.send(
@@ -71,7 +65,6 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
 
   const setColor = (host: Player, guest: Player) => {
     if (socket) {
-      console.log("setting color");
       socket.send(
         JSON.stringify({
           type: "setcolor",
@@ -112,13 +105,12 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   useEffect(() => {
     if (startGame && chess) {
       chess.isGameStart = true;
-      console.log("starting game");
     }
   }, [chess, startGame]);
 
   return (
     <div>
-      <h1>Game Room: {roomId}</h1>
+      <span>Game Room: {roomId}</span>
       {chess ? (
         <div>
           <Board game={chess} setMove={setMove} startGame={startGame} />
@@ -126,7 +118,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
       ) : (
         <></>
       )}
-      <div>
+      {/* <div>
         <h2>Chat</h2>
         <ul>
           {messages.map((msg, index) => (
@@ -135,7 +127,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
         </ul>
         <input type="text" id="chat-message-input" />
         <button>Send</button>
-      </div>
+      </div> */}
     </div>
   );
 };

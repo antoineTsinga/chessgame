@@ -1,0 +1,146 @@
+.container-home{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.title-home{
+    height: 80px;
+    font-size: 1.5em;
+    letter-spacing: 0.1em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.image-title{
+    width: 50px;
+    height: 50px;
+}
+.caption-home{
+    max-width: 800px;
+}
+
+.description-home{
+    margin: 20px;
+}
+
+.description-home h2{
+   font-size:1.2em;
+   text-align: center;
+   line-height: 1.1em;
+}
+.description-home>li{
+    margin-top: 20px;
+}
+
+.bold{
+    font-weight:bold;
+    font-size: 1.1em
+}
+
+
+
+.container-form-create-join{
+  display: flex;
+  flex: 1;
+  
+  flex-direction: column;
+  align-items: center;
+  min-width: 350px;
+  width: 60%;
+  max-width: 600px;
+  margin-bottom: 20px;
+  
+}
+
+.menu-create-join {
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    min-width: 350px;
+
+}
+.create-join-content{
+    aspect-ratio: 1;
+    min-width: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(225, 224, 240);
+}
+
+.textinput{
+    width: 75%;
+    border: none;
+    height: 50px;
+    margin-bottom: 20px;
+    padding-left: 5%;
+    font-size: 20px;
+    border-radius: 5px;
+    transition:  box-shadow 0.2s ease-out;
+}
+
+.textinput:focus{
+    outline: none;
+    box-shadow: inset 0px 0px 0px 2px rgb(101, 101, 222);
+}
+  
+.tab {
+    cursor: pointer;
+    background-color: white;
+    border: 1px solid white;
+    padding: 20px;
+    min-width: 175px;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: background-color 0.2s ease-out;
+}
+
+.tab-inactive:hover{
+    background-color: rgb(235, 234, 242);
+    border:1px solid  rgb(225, 224, 240);
+    
+}
+  
+.tab-active {
+    background-color: rgb(225, 224, 240);
+    border:1px solid  rgb(225, 224, 240);
+}
+
+.btn{
+    width: 80%;
+    border: none;
+    height: 50px;
+    background-color: rgb(101, 101, 222);
+    color: white;
+    font-weight: bold;
+    font-size: 1.1em;
+    border-radius: 5px;
+    transition: background-color 0.2s ease-out;
+    cursor: pointer;
+}
+
+.btn:hover{
+    background-color: rgb(69, 69, 201);
+}
+  
+
+.footer{
+    padding: 10px;
+    color: white;
+    height:  50px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items:center;
+    background-color: #020a17;
+  }
+  
+  .footer a {
+    color: white;
+  }

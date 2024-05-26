@@ -318,8 +318,6 @@ export default class Game {
 
     this.changeTurn(); //change turn
 
-    console.log(this.generateFEN());
-
     if (to.piece?.code === "K") {
       //update king position
       this.kingPos[to.piece.color] = [to.row, to.column];
