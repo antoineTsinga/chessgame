@@ -331,8 +331,10 @@ export default class Game {
       from: [from.row, from.column],
       to: [to.row, to.column],
       promotion,
+      time: 0,
     };
 
+    console.log("move make");
     return move;
   }
 

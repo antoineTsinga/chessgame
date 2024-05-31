@@ -23,6 +23,7 @@ export default function Layout() {
   useEffect(() => {
     if (!socket) return;
     socket.onopen = () => {
+      console.log("connected");
       setLoading(false);
     };
 

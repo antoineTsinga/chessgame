@@ -19,6 +19,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.type === "move" && chess) {
+      setMove(null);
       chess.move(data.content);
       setFen(chess.generateFEN());
     } else if (data.type === "findcolor") {
@@ -70,6 +71,8 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
 
   const sendMove = (move: Move) => {
     if (socket) {
+      chess?.move(move);
+      console.log("move");
       socket.send(
         JSON.stringify({
           type: "move",

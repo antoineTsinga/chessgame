@@ -59,6 +59,7 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
       from: [prevCell.row, prevCell.column],
       to: [cell.row, cell.column],
       promotion: code,
+      time: 0,
     };
     setMove(move);
     setPossibleMoves([]);

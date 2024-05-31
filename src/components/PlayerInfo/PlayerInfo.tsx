@@ -30,7 +30,7 @@ const PlayerInfo: React.FC<BoardProps> = ({
     if (!startTimer) return;
     const intervalId = setInterval(() => {
       game.timers[player.color] = Math.max(game.timers[player.color] - 1);
-      setTime((prevSeconds) => Math.max(0, prevSeconds - 1));
+      setTime(game.timers[player.color]);
     }, 1000);
 
     if (time === 0 || game.isGameOver()) {

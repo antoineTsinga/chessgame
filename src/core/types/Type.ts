@@ -12,4 +12,5 @@ export type Move = {
   from: number[];
   to: number[];
   promotion: string | null;
+  time: number;
 };
