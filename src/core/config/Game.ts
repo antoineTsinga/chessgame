@@ -85,13 +85,19 @@ export default class Game {
     }
     this.board = createBoard();
     this.history = [];
+    this.historyMove = [];
     this.isGameStart = true;
     this.winner = null;
     this.turn = 1;
     this.toPromote = null;
     this.LastFiftyMoveWithoutTake = [];
+    this.numberFullMoves = 1;
     this.takenPieces = { black: [], white: [] };
     this.timers = { black: 600, white: 600 };
+    this.kingPos = {
+      white: [7, 4],
+      black: [0, 4],
+    };
   }
 
   getkingCell(color: Color): Cell {
@@ -399,6 +405,7 @@ export default class Game {
         break;
 
       case "R":
+        cell.piece = new Rook(color, this.getImage("R", color.charAt(0)));
         break;
       case "Q":
         cell.piece = new Queen(color, this.getImage("Q", color.charAt(0)));

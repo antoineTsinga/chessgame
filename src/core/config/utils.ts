@@ -53,6 +53,7 @@ const makeMove = (
     from: [from.row, from.column],
     to: [to.row, to.column],
     promotion: null,
+    timer: game.getTimer(game.whoPlay),
   };
 
   setCurrentPlayerMove(move);

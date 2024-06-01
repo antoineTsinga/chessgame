@@ -14,3 +14,9 @@ export type Move = {
   promotion: string | null;
   time: number;
 };
+
+export type ReMatch = {
+  request: boolean;
+  requester: Color;
+  response: boolean;
+};

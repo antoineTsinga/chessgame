@@ -4,8 +4,7 @@
   /* background-color: #666; */
   max-width: 1200px;
   height: 100%;
-  padding-top: 20px ;
-  margin-left: 65px;
+
   
 }
 
@@ -86,6 +85,8 @@
 .promotion{
   width: 30%;
   position: absolute;
+  left: 35%;
+  top: 50%;
   display: flex;
   background-color: rgb(110, 27, 159);
   box-shadow: 0 0 10px;
@@ -95,6 +96,8 @@
 
 .promotion-background{
   position: absolute;
+  left: 0;
+  top: 0;
   width: 800px;
   aspect-ratio: 1;
   background-color: black;

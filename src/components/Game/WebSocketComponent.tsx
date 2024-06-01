@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import Game from "../../core/config/Game.ts";
 import Board from "../Board/Board.tsx";
-import { Color, Move } from "../../core/types/Type.ts";
+import { Color, Move, ReMatch } from "../../core/types/Type.ts";
 import Player from "../../core/types/Player.ts";
 import "./WebSocketComponent.css";
+import Modal from "../Modal/Modal.tsx";
+import LoadingDot from "../../core/icons/LoadingDot.jsx";
+import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
 
 const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   const [messages, setMessages] = useState<string[]>([]);
@@ -11,6 +14,8 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   const [fen, setFen] = useState("");
   const [move, setMove] = useState<Move | null>(null);
   const [startGame, setStartGame] = useState<boolean>(false);
+  const [endGameModal, setEndGameModal] = useState<boolean>(false);
+  const [rematch, setRematch] = useState<ReMatch | null>(null);
 
   socket.onopen = () => {
     console.log("connected");
@@ -40,6 +45,14 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
       }
     } else if (data.type === "start") {
       setStartGame(true);
+    } else if (data.type === "rematch") {
+      const rematch: ReMatch = data.content;
+      setRematch(rematch);
+      if (rematch.response) {
+        chess?.reMatch();
+        setRematch(null);
+        setEndGameModal(false);
+      }
     }
   };
 
@@ -92,6 +105,17 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
     }
   };
 
+  const sendRematch = (rematch: ReMatch) => {
+    if (socket) {
+      socket.send(
+        JSON.stringify({
+          type: "rematch",
+          content: rematch,
+        })
+      );
+    }
+  };
+
   useEffect(() => {
     if (socket.OPEN) {
       if (isHost && !chess) {
@@ -116,12 +140,90 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
     }
   }, [chess, startGame]);
 
+  useEffect(() => {
+    if (chess && chess.isGameOver()) {
+      setEndGameModal(true);
+    }
+  }, [chess, chess?.whoPlay]);
+
   return (
     <div className="game-view">
       <h1 className="game-code">Game Room: {roomId}</h1>
       {chess ? (
         <div className="game-board">
-          <Board game={chess} setMove={setMove} startGame={startGame} />
+          <div>
+            <PlayerInfo
+              startGame={startGame}
+              game={chess}
+              player={chess.player2}
+              setEndGameModal={setEndGameModal}
+            />
+            <Board game={chess} setMove={setMove} startGame={startGame} />
+            <PlayerInfo
+              game={chess}
+              player={chess.player1}
+              setEndGameModal={setEndGameModal}
+              startGame={startGame}
+            />
+          </div>
+          {endGameModal ? (
+            <Modal
+              title={
+                chess.getWinner()
+                  ? `${chess.getWinner()?.color} win`
+                  : "It's a draw"
+              }
+              onclick={setEndGameModal}
+            >
+              {chess.winner === null ? (
+                <div className="win">🫱🏿‍🫲🏻</div>
+              ) : chess.winner === chess.player1 ? (
+                <div className="win">🎉</div>
+              ) : (
+                <div className="win">😭</div>
+              )}
+
+              {rematch?.request ? (
+                rematch?.requester !== chess.player1.color ? (
+                  <button
+                    className="btn"
+                    type="button"
+                    onClick={() => {
+                      const req: ReMatch = {
+                        request: true,
+                        requester: chess.whoPlay.color,
+                        response: true,
+                      };
+                      sendRematch(req);
+                    }}
+                  >
+                    Accept Rematch
+                  </button>
+                ) : (
+                  <button className="btn" type="button">
+                    <LoadingDot width={"40px"} />
+                  </button>
+                )
+              ) : (
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => {
+                    const req: ReMatch = {
+                      request: true,
+                      requester: chess.player1.color,
+                      response: false,
+                    };
+                    sendRematch(req);
+                  }}
+                >
+                  Rematch
+                </button>
+              )}
+            </Modal>
+          ) : (
+            <></>
+          )}
         </div>
       ) : (
         <div></div>
