@@ -17,7 +17,7 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
   const [current, setCurrent] = useState<Cell | null>(null);
   const [prevCell, setPrevCell] = useState<Cell | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]);
-  const [moveMakeFrom, setMoveMakeFrom] = useState<Cell | null>(null);
+  const [moveMade, setMoveMade] = useState<Cell[]>([]);
   const [endGameModal, setEndGameModal] = useState<boolean>(false);
   const [promotionModale, setPromotionModale] = useState<boolean>(false);
 
@@ -30,6 +30,7 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
     }
 
     if (game.whoPlay.color !== game.player1.color) return;
+    setCurrent(cell);
 
     if (prevCell && !prevCell.isEmpty) {
       if (game.isPromotion(prevCell, cell)) {
@@ -49,6 +50,15 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
     if (game.isGameOver()) {
       setEndGameModal(true);
     }
+    const lastMove = game.historyMove[game.historyMove.length - 1];
+
+    if (lastMove) {
+      setMoveMade([
+        game.board[lastMove[0].row][lastMove[0].column],
+        game.board[lastMove[1].row][lastMove[1].column],
+      ]);
+    }
+    console.log("work");
   }, [game, game.whoPlay]);
 
   const setPromotionCall = (cell: Cell | null, code: string) => {
@@ -64,6 +74,15 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
     setPossibleMoves([]);
     setPrevCell(null);
     setPromotionModale(false);
+  };
+
+  const isMoveInMade = (cell: Cell) => {
+    if (moveMade.length < 2) return false;
+
+    const from = moveMade[0];
+    const to = moveMade[1];
+
+    return cell === from || cell === to;
   };
 
   return (
@@ -82,8 +101,7 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
             <div
               key={`${i}${j}`}
               className={`cell ${
-                (current === cell && !cell.isEmpty && "cell-target-piece") ||
-                (moveMakeFrom === cell && "cell-target-piece")
+                isMoveInMade(cell) && cell.color + "-move-made"
               } ${cell.color} `}
               onClick={() => handleClick(cell)}
             >

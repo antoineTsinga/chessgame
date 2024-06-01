@@ -11,6 +11,7 @@ export default class Game {
   hostCode: string;
   board: BoardType;
   history: string[] = [];
+  historyMove: Cell[][] = [];
   isGameStart: boolean = false;
   winner: Player | null = null;
   turn: number = 1;
@@ -283,6 +284,17 @@ export default class Game {
     const possibleMoves = this.possibleMoveFrom(from);
     return possibleMoves?.includes(to);
   }
+
+  copyInstance(instance) {
+    const copy = new instance.constructor();
+    for (let key in instance) {
+      if (instance.hasOwnProperty(key)) {
+        copy[key] = instance[key];
+      }
+    }
+    return copy;
+  }
+
   movePieceFromCellTo(
     from: Cell,
     to: Cell,
@@ -291,6 +303,8 @@ export default class Game {
     if (!from.piece || !this.isValidMove(from, to)) return null;
 
     to.piece && this.takenPieces[to.piece.color].push(to.piece); // add in stack when taken pieces
+
+    this.historyMove.push([this.copyInstance(from), this.copyInstance(to)]);
 
     if (from.piece.code === "P") {
       this.makePawnMove(from, to, promotion);
@@ -315,7 +329,7 @@ export default class Game {
     this.history.push(this.stringifyBoard());
 
     if (this.whoPlay.color === "black") this.numberFullMoves += 1; //count full moves
-
+    this.turn += 1;
     this.changeTurn(); //change turn
 
     if (to.piece?.code === "K") {
@@ -334,7 +348,6 @@ export default class Game {
       time: 0,
     };
 
-    console.log("move make");
     return move;
   }
 

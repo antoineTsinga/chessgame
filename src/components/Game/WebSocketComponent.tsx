@@ -72,7 +72,6 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   const sendMove = (move: Move) => {
     if (socket) {
       chess?.move(move);
-      console.log("move");
       socket.send(
         JSON.stringify({
           type: "move",
