@@ -1,0 +1,14 @@
+.game-view{
+    height: 100vh;
+    border: 1px solid white;
+    /* overflow: hidden; */
+
+}
+
+.game-code{
+    font-size: 23px;
+    padding: 1rem;
+    border: 1px solid white;
+    text-align: center;
+    height: 50px;
+}

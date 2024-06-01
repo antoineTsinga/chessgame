@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import Game from "../../core/config/Game.ts";
 import Board from "../Board/Board.tsx";
 import { Color, Move } from "../../core/types/Type.ts";
-import { useParams } from "react-router-dom";
 import Player from "../../core/types/Player.ts";
+import "./WebSocketComponent.css";
 
 const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   const [messages, setMessages] = useState<string[]>([]);
@@ -118,25 +118,15 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   }, [chess, startGame]);
 
   return (
-    <div>
-      <span>Game Room: {roomId}</span>
+    <div className="game-view">
+      <h1 className="game-code">Game Room: {roomId}</h1>
       {chess ? (
-        <div>
+        <div className="game-board">
           <Board game={chess} setMove={setMove} startGame={startGame} />
         </div>
       ) : (
-        <></>
+        <div></div>
       )}
-      {/* <div>
-        <h2>Chat</h2>
-        <ul>
-          {messages.map((msg, index) => (
-            <li key={index}>{msg}</li>
-          ))}
-        </ul>
-        <input type="text" id="chat-message-input" />
-        <button>Send</button>
-      </div> */}
     </div>
   );
 };

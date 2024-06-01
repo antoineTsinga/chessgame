@@ -67,22 +67,22 @@ const CreateGame = ({ setRoomName, setPlayerName, setIsHost, loading }) => {
 
       <div className="container-form-create-join">
         <div className="menu-create-join">
-          <input
-            type="button"
-            value="Create a Game"
+          <div
             className={`tab ${
               activeTab === "create" ? "tab-active" : "tab-inactive"
             }`}
             onClick={() => handleTabClick("create")}
-          />
-          <input
-            type="button"
-            value="Join a Game"
+          >
+            Create a Game
+          </div>
+          <div
             className={`tab ${
               activeTab === "join" ? "tab-active" : "tab-inactive"
             }`}
             onClick={() => handleTabClick("join")}
-          />
+          >
+            Join a Game
+          </div>
         </div>
 
         {activeTab === "create" && (

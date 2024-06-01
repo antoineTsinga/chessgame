@@ -5,7 +5,6 @@ import Cell from "../../core/types/Cell.ts";
 import Game from "../../core/config/Game.ts";
 import { makeMove, showPosibleMove } from "../../core/config/utils.ts";
 import "./Board.css";
-import Player from "../../core/types/Player.ts";
 import { Move } from "../../core/types/Type.ts";
 
 export interface BoardProps {
@@ -69,12 +68,14 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
 
   return (
     <div className="container">
-      <PlayerInfo
-        startGame={startGame}
-        game={game}
-        player={game.player2}
-        setEndGameModal={setEndGameModal}
-      />
+      <div className="player-info">
+        <PlayerInfo
+          startGame={startGame}
+          game={game}
+          player={game.player2}
+          setEndGameModal={setEndGameModal}
+        />
+      </div>
       <div className={`board ${game.player1.color === "black" && "reverse"}`}>
         {game.board.map((row, i) =>
           row.map((cell, j) => (
@@ -103,12 +104,14 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
           ))
         )}
       </div>
-      <PlayerInfo
-        game={game}
-        player={game.player1}
-        setEndGameModal={setEndGameModal}
-        startGame={startGame}
-      />
+      <div className="player-info">
+        <PlayerInfo
+          game={game}
+          player={game.player1}
+          setEndGameModal={setEndGameModal}
+          startGame={startGame}
+        />
+      </div>
 
       {promotionModale && game.toPromote ? (
         <>

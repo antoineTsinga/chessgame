@@ -46,7 +46,7 @@
 
 .container-form-create-join{
   display: flex;
-  
+  /* border: 1px solid white; */
   flex-direction: column;
   align-items: center;
   min-width: 350px;
@@ -57,6 +57,8 @@
 }
 
 .menu-create-join {
+    /* border: 1px solid white; */
+    margin: auto;
     display: flex;
     flex-direction: row;
     justify-content: start;
@@ -70,7 +72,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgb(225, 224, 240);
+    background-color: #1E1D1A;
 }
 
 .textinput{
@@ -86,36 +88,36 @@
 
 .textinput:focus{
     outline: none;
-    box-shadow: inset 0px 0px 0px 2px rgb(101, 101, 222);
+    box-shadow: inset 0px 0px 0px 2px #81A64C;
 }
   
 .tab {
     cursor: pointer;
-    background-color: white;
-    border: 1px solid white;
+    flex: 1;
     padding: 20px;
-    min-width: 175px;
-    font-size: 1.1em;
+    text-align: center;
+    font-size: 1em;
     font-weight: bold;
+    background-color: #1A1A17;
     transition: background-color 0.2s ease-out;
 }
-
+/* 
 .tab-inactive:hover{
-    background-color: rgb(235, 234, 242);
+    background-color: #302E2D;
     border:1px solid  rgb(225, 224, 240);
     
-}
+} */
   
 .tab-active {
-    background-color: rgb(225, 224, 240);
-    border:1px solid  rgb(225, 224, 240);
+    background-color: #1E1D1A;
+    /* border:1px solid  rgb(225, 224, 240); */
 }
 
 .btn{
     width: 80%;
     border: none;
     height: 50px;
-    background-color: rgb(101, 101, 222);
+    background-color: #81A64C;
     color: white;
     font-weight: bold;
     font-size: 1.1em;
@@ -125,7 +127,7 @@
 }
 
 .btn:hover{
-    background-color: rgb(69, 69, 201);
+    background-color: rgb(129, 166, 76, 0.8);
 }
   
 
