@@ -1,15 +1,18 @@
 .container {
+  position: relative;
   margin: auto;
-  background-color: #666;
+  /* background-color: #666; */
   max-width: 1200px;
-  height: 80vh;
+  height: 100%;
+  padding-top: 20px ;
+  margin-left: 65px;
   
 }
 
 .board {
   /* aspect-ratio: 1; */
-  height: 80%;
   aspect-ratio: 1;
+  width: 100%;
   margin: auto;
   max-width: 700px;
   max-height: 700px;
@@ -17,12 +20,12 @@
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
 
-  border: 1px solid #666;
+  /* border: 1px solid #666; */
 }
 
 .player-info{
   margin: auto;
-  border: 1px solid black;
+  /* border: 1px solid black; */
 }
 
 .cell {
@@ -32,9 +35,19 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  border: 1px solid #769656;
+  background-color: white;
+  /* border: 1px solid #769656; */
   cursor: pointer;
   position: relative;
+}
+
+
+.black-move-made{
+  background-color:#B9CA43 !important;
+}
+
+.white-move-made{
+  background-color: #F5F682 !important;
 }
 
 .reverse{
@@ -49,12 +62,8 @@
   background-color: #EEEED2;
 }
 
-.black:hover {
-  background-color: rgb(222, 240, 85);;
-}
-
-.white:hover {
-  background-color: rgb(222, 240, 85);
+.cell:hover {
+  border:1px solid rgb(222, 240, 85);
 }
 
 .piece {
@@ -63,7 +72,7 @@
 }
 
 .cell-target-piece {
-  background-color: rgb(222, 240, 85) !important;
+  background-color: rgba(222, 240, 85) !important;
 }
 
 .possible-moves {
@@ -113,4 +122,12 @@
   font-size: 12em;
   text-align: center;
 
+}
+
+
+@media screen and (max-width: 700px){
+  .container {
+    margin: 0;
+    padding: 0;
+  }
 }
