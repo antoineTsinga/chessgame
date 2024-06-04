@@ -49,11 +49,12 @@ const makeMove = (
   }
   setPossibleMoves([]);
 
-  const move = {
+  const move: Move = {
     from: [from.row, from.column],
     to: [to.row, to.column],
     promotion: null,
     timer: game.getTimer(game.whoPlay),
+    color: game.whoPlay.color,
   };
 
   setCurrentPlayerMove(move);

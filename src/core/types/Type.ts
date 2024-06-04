@@ -12,7 +12,8 @@ export type Move = {
   from: number[];
   to: number[];
   promotion: string | null;
-  time: number;
+  timer: number;
+  color: Color;
 };
 
 export type ReMatch = {

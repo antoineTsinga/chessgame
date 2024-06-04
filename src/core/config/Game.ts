@@ -46,6 +46,9 @@ export default class Game {
     return this.player1 === player ? this.player2 : this.player1;
   }
 
+  isTurn(player: Player): boolean {
+    return this.whoPlay === player;
+  }
   getTimer(player: Player): number {
     return this.timers[player.color];
   }
@@ -291,6 +294,13 @@ export default class Game {
     return possibleMoves?.includes(to);
   }
 
+  isValidMove2(move: Move): boolean {
+    const from = this.board[move.from[0]][move.from[1]];
+    const to = this.board[move.to[0]][move.to[1]];
+    const possibleMoves = this.possibleMoveFrom(from);
+    return possibleMoves?.includes(to);
+  }
+
   copyInstance(instance) {
     const copy = new instance.constructor();
     for (let key in instance) {
@@ -334,6 +344,13 @@ export default class Game {
 
     this.history.push(this.stringifyBoard());
 
+    const move = {
+      from: [from.row, from.column],
+      to: [to.row, to.column],
+      promotion,
+      timer: this.timers[this.whoPlay.color],
+    };
+
     if (this.whoPlay.color === "black") this.numberFullMoves += 1; //count full moves
     this.turn += 1;
     this.changeTurn(); //change turn
@@ -346,13 +363,6 @@ export default class Game {
     if (this.isGameOver()) {
       this.setWinner();
     }
-
-    const move = {
-      from: [from.row, from.column],
-      to: [to.row, to.column],
-      promotion,
-      time: 0,
-    };
 
     return move;
   }
@@ -383,10 +393,10 @@ export default class Game {
     }
   }
 
-  move({ from, to, promotion }) {
+  move({ from, to, promotion, timer, color }: Move) {
     const fromCell = this.board[from[0]][from[1]];
     const toCell = this.board[to[0]][to[1]];
-
+    this.timers[color] = timer;
     return this.movePieceFromCellTo(fromCell, toCell, promotion);
   }
 

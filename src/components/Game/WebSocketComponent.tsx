@@ -16,17 +16,30 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   const [startGame, setStartGame] = useState<boolean>(false);
   const [endGameModal, setEndGameModal] = useState<boolean>(false);
   const [rematch, setRematch] = useState<ReMatch | null>(null);
+  const [timeLeftTo, setTimeLeftTo] = useState<number>(0);
 
   socket.onopen = () => {
     console.log("connected");
   };
 
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes < 10 ? "0" : ""}${minutes}:${
+      seconds < 10 ? "0" : ""
+    }${seconds}`;
+  };
+
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.type === "move" && chess) {
+      const moveSend = data.content.move;
+      const startTime = data.content.startTime;
+      console.log(moveSend);
+      const moveMaked = chess.move(moveSend);
       setMove(null);
-      chess.move(data.content);
-      setFen(chess.generateFEN());
+
+      if (moveMaked) setTimeLeftTo(startTime);
     } else if (data.type === "findcolor") {
       if (isHost && chess) {
         const opponent = data.content;
@@ -44,6 +57,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
         sendStartGame();
       }
     } else if (data.type === "start") {
+      setTimeLeftTo(data.content);
       setStartGame(true);
     } else if (data.type === "rematch") {
       const rematch: ReMatch = data.content;
@@ -53,6 +67,8 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
         setRematch(null);
         setEndGameModal(false);
       }
+    } else if (data.type === "getTime") {
+      console.log("getTime", data.content);
     }
   };
 
@@ -83,8 +99,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   };
 
   const sendMove = (move: Move) => {
-    if (socket) {
-      chess?.move(move);
+    if (socket && chess && chess.isValidMove2(move)) {
       socket.send(
         JSON.stringify({
           type: "move",
@@ -130,7 +145,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
 
   useEffect(() => {
     if (move === null || !chess) return;
-    setFen(chess.generateFEN());
+    // setFen(chess.generateFEN());
     sendMove(move);
   }, [chess, move]);
 
@@ -157,6 +172,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
               game={chess}
               player={chess.player2}
               setEndGameModal={setEndGameModal}
+              startTimeDate={chess.isTurn(chess.player2) ? timeLeftTo : 0}
             />
             <Board game={chess} setMove={setMove} startGame={startGame} />
             <PlayerInfo
@@ -164,6 +180,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
               player={chess.player1}
               setEndGameModal={setEndGameModal}
               startGame={startGame}
+              startTimeDate={chess.isTurn(chess.player1) ? timeLeftTo : 0}
             />
           </div>
           {endGameModal ? (

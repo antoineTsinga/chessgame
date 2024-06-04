@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Game from "../../core/config/Game";
 import Player from "../../core/types/Player";
 import { Color } from "../../core/types/Type";
@@ -8,72 +8,71 @@ import { Clock } from "../../core/icons/icons";
 export interface BoardProps {
   game: Game;
   player: Player;
-  setEndGameModal: (value: boolean) => void;
+  setEndGameModal: React.Dispatch<boolean>;
   startGame: boolean;
+  startTimeDate: number;
 }
 
 const PlayerInfo: React.FC<BoardProps> = ({
   game,
   player,
   setEndGameModal,
-  startGame,
+  startGame, // if the as start
+  startTimeDate, // The date from which we start counting the time elapsed by the player
 }) => {
   const [active, setActive] = useState<boolean>(false);
   const [time, setTime] = useState<number>(game.timers[player.color]);
   const [advantage, setAdvantage] = useState<number>(0);
-  const [startTimer, setStartTimer] = useState<boolean>(false);
-
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout>();
   const colortakenPieces: Color = game.getOpponent(player).color;
-  const adversaryColorTakenPieces: Color = player.color;
+
+  const countAdvantage = useCallback(
+    (game: Game) => {
+      const point = game
+        .leftPieceTo(player)
+        .reduce((p, p2) => p + p2.piece.value, 0);
+      const adversary = game
+        .leftPieceTo(game.getOpponent(player))
+        .reduce((p, p2) => p + p2.piece.value, 0);
+
+      return Math.max(0, point - adversary);
+    },
+    [player]
+  );
+
+  const interval = useCallback(() => {
+    const now = Date.now() / 1000;
+    setTime(game.timers[player.color] - (now - startTimeDate));
+  }, [startTimeDate]);
 
   useEffect(() => {
-    if (!startTimer) return;
-    const intervalId = setInterval(() => {
-      game.timers[player.color] = Math.max(game.timers[player.color] - 1);
-      setTime(game.timers[player.color]);
-    }, 1000);
+    if (!startGame) return;
 
-    if (time === 0 || game.isGameOver()) {
-      game.setWinner();
-      setEndGameModal(true);
-      clearInterval(intervalId);
-    }
-
-    const point = game
-      .leftPieceTo(player)
-      .reduce((p, p2) => p + p2.piece.value, 0);
-    const adversary = game
-      .leftPieceTo(game.getOpponent(player))
-      .reduce((p, p2) => p + p2.piece.value, 0);
-
-    setAdvantage(Math.max(0, point - adversary));
-    if (game.whoPlay === player) {
+    if (game.isTurn(player)) {
+      // start timer if turn to play
       setActive(true);
+      setIntervalId(setInterval(interval, 50));
     } else {
       setActive(false);
       clearInterval(intervalId);
     }
+
+    setAdvantage(countAdvantage(game));
+
     return () => clearInterval(intervalId);
-  }, [
-    adversaryColorTakenPieces,
-    colortakenPieces,
-    game,
-    game.takenPieces,
-    game.timers,
-    game.whoPlay,
-    player,
-    setEndGameModal,
-    time,
-    startTimer,
-  ]);
+  }, [countAdvantage, game, interval, player, startGame, startTimeDate]);
 
   useEffect(() => {
-    if (startGame) setStartTimer(true);
-  }, [startGame]);
+    if (time <= 0) {
+      game.setWinner();
+      setEndGameModal(true);
+      clearInterval(intervalId);
+    }
+  }, [game, time]);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
-    const seconds = time % 60;
+    const seconds = Math.floor(time % 60);
     return `${minutes < 10 ? "0" : ""}${minutes}:${
       seconds < 10 ? "0" : ""
     }${seconds}`;
@@ -96,6 +95,7 @@ const PlayerInfo: React.FC<BoardProps> = ({
         );
       });
   };
+
   return (
     <div className="section-player">
       <img className="avater" src="/images/user.png" alt={player.name} />
