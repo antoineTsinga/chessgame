@@ -19,7 +19,7 @@ export default class Game {
   toPromote: Cell | null = null;
   LastFiftyMoveWithoutTake: number[] = [];
   numberFullMoves: number = 1;
-  timers: { black: number; white: number } = { black: 30, white: 30 };
+  timers: { black: number; white: number } = { black: 600, white: 600 };
   takenPieces: { black: IPiece[]; white: IPiece[] } = { black: [], white: [] };
   kingPos: { white: [number, number]; black: [number, number] } = {
     white: [7, 4],
