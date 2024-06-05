@@ -8,6 +8,8 @@ import Modal from "../Modal/Modal.tsx";
 import LoadingDot from "../../core/icons/LoadingDot.jsx";
 import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
 import { GravityUiCopy } from "../../core/icons/icons.jsx";
+import SoundComponent from "../../core/sounds/SoundComponent.jsx";
+import SoundManager from "../../core/sounds/SoundManager.jsx";
 
 export interface GameProps {
   playerName: string;
@@ -31,6 +33,7 @@ const WebSocketComponent: React.FC<GameProps> = ({
   const [endGameModal, setEndGameModal] = useState<boolean>(false);
   const [rematch, setRematch] = useState<ReMatch | null>(null); // define if there is a pendding rematch request
   const [timeLeftTo, setTimeLeftTo] = useState<number>(0);
+  const [soundType, setSoundType] = useState(""); //Play sound after each moves
 
   socket.onopen = () => {
     console.log("connected");
@@ -53,7 +56,10 @@ const WebSocketComponent: React.FC<GameProps> = ({
       const moveMaked = chess.move(moveSend);
       setMove(null);
 
-      if (moveMaked) setTimeLeftTo(startTime);
+      if (moveMaked) {
+        setTimeLeftTo(startTime);
+        setSoundType(moveMaked);
+      }
     } else if (data.type === "findcolor") {
       // Player who join game send findcolor message to know is color and the send a response
       if (isHost && chess) {
@@ -181,6 +187,13 @@ const WebSocketComponent: React.FC<GameProps> = ({
     }
   }, [chess, chess?.whoPlay]);
 
+  useEffect(() => {
+    if (soundType) {
+      const timeout = setTimeout(() => setSoundType(""), 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [soundType]);
+
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
   };
@@ -194,10 +207,13 @@ const WebSocketComponent: React.FC<GameProps> = ({
           onClick={() => copyToClipboard(roomId)}
         />
       </div>
+      <div className="sound">
+        <SoundManager soundType={soundType} />
+      </div>
 
       {chess ? (
-        <div className="game-board">
-          <div>
+        <div className="game-board-container">
+          <div className="game-board">
             <PlayerInfo
               startGame={startGame}
               game={chess}

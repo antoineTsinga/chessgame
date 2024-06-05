@@ -1,7 +1,10 @@
 .game-view{
-    /* height: 100vh; */
+    min-height: 100vh;
     /* border: 1px solid white; */
     display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
     /* overflow: scroll; */
 
 }
@@ -10,21 +13,41 @@
 .game-code-container{
     display: flex;
     align-items: center;
-    justify-content: center
+    justify-content: center;
+    padding: 20px;
+    /* border: 1px solid white; */
 }
 .game-code{
     font-size: 23px;
-    padding: 1rem;
+    /* padding-top: 1rem; */
     /* border: 1px solid white; */
     text-align: center;
     margin-bottom: 1rem;
+    
+}
+
+.game-board-container{
+    position: relative;
+    margin: 20px;
+    /* border: 1px solid white; */
+    /* margin-top: 20px; */
 }
 
 .game-board{
     position: relative;
     /* margin-top: 20px; */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: fit-content;
+    min-width: 350px;
+    max-width: 600px;
+    /* border: 1px solid white; */
+    
 }
 .copy-btn{
+    cursor: pointer;
     width: 30px;
     height: 30px;
 }

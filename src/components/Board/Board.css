@@ -3,7 +3,7 @@
   margin: auto;
   /* background-color: #666; */
   max-width: 1200px;
-  height: 100%;
+
 
   
 }
@@ -128,9 +128,3 @@
 }
 
 
-@media screen and (max-width: 700px){
-  .container {
-    margin: 0;
-    padding: 0;
-  }
-}

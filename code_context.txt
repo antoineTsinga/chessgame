@@ -1,22 +1,26 @@
 // File: src/App.css
 .App {
-    background-color: rgb(49, 32, 28);
+    background-color: #262522;
     color: white;
+    min-height: 100vh;
+}
+
+
+html{
+    overflow-y: scroll;
 }
 
 // File: src/App.js
+import React, { useEffect, useState } from "react";
+
 import "./App.css";
-import Board from "./components/Board/Board.tsx";
-import Login from "./components/Login/Login.tsx";
-import Game from "./core/config/Game.ts";
+
+import Layout from "./components/Layout/Layout.jsx";
 
 function App() {
-  const game = new Game("player1");
-  game.player2.name = "player2";
   return (
     <div className="App">
-      {/* <Login /> */}
-      <Board game={game} current={game.player1} />
+      <Layout />
     </div>
   );
 }
@@ -25,24 +29,31 @@ export default App;
 
 // File: src/components/Board/Board.css
 .container {
-  height: 100vh;
+  position: relative;
+  margin: auto;
+  /* background-color: #f5f5f5; */
+  max-width: 1200px;
+  height: 100%;
+  aspect-ratio: 1;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
 }
 
 .board {
-  width: 100%;
-  aspect-ratio: 1;
+  margin: auto;
   max-width: 700px;
   max-height: 700px;
+  width: 100%;
+  height: 100%;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
 
-  border: 1px solid #666;
+  /* border: 1px solid #666; */
+}
+
+.player-info{
+  margin: auto;
+  /* border: 1px solid black; */
 }
 
 .cell {
@@ -51,13 +62,20 @@ export default App;
   justify-content: center;
   width: 100%;
   height: 100%;
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
-  border: 1px solid #666;
   box-sizing: border-box;
-  transition: background-color 0.3s ease-in-out;
+  background-color: white;
+  /* border: 1px solid #769656; */
   cursor: pointer;
   position: relative;
+}
+
+
+.black-move-made{
+  background-color:#B9CA43 !important;
+}
+
+.white-move-made{
+  background-color: #F5F682 !important;
 }
 
 .reverse{
@@ -65,19 +83,15 @@ export default App;
 }
 
 .black {
-  background-color: gray;
+  background-color: #769656;
 }
 
 .white {
-  background-color: white;
+  background-color: #EEEED2;
 }
 
-.black:hover {
-  background-color: rgba(65, 112, 119, 0.3);
-}
-
-.white:hover {
-  background-color: rgba(65, 112, 119, 0.3);
+.cell:hover {
+  border:1px solid rgb(222, 240, 85);
 }
 
 .piece {
@@ -86,7 +100,7 @@ export default App;
 }
 
 .cell-target-piece {
-  background-color: rgb(222, 240, 85) !important;
+  background-color: rgba(222, 240, 85) !important;
 }
 
 .possible-moves {
@@ -100,10 +114,27 @@ export default App;
 .promotion{
   width: 30%;
   position: absolute;
+  left: 35%;
+  top: 50%;
   display: flex;
   background-color: rgb(110, 27, 159);
   box-shadow: 0 0 10px;
   border-radius: 5px;
+  opacity: 1;
+}
+
+.promotion-background{
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 800px;
+  aspect-ratio: 1;
+  background-color: black;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.3;
 }
 
 .promotion .piece{
@@ -124,71 +155,107 @@ export default App;
   text-align: center;
 
 }
+
+
+@media screen and (max-width: 700px){
+  .container {
+    margin: 0;
+    padding: 0;
+  }
+}
 // File: src/components/Board/Board.tsx
 import React, { useEffect, useState } from "react";
 import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
 import Modal from "../Modal/Modal.tsx";
 import Cell from "../../core/types/Cell.ts";
 import Game from "../../core/config/Game.ts";
-import { makeMove, setPromotion, showPosibleMove } from "./utils.ts";
+import { makeMove, showPosibleMove } from "../../core/config/utils.ts";
 import "./Board.css";
-import Player from "../../core/types/Player.ts";
+import { Move } from "../../core/types/Type.ts";
+import LoadingDot from "../../core/icons/LoadingDot.jsx";
 
 export interface BoardProps {
   game: Game;
-  currentPlayer: Player;
+  setMove: React.Dispatch<React.SetStateAction<Move | null>>;
+  startGame: boolean;
 }
 
-const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
+const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
   const [current, setCurrent] = useState<Cell | null>(null);
   const [prevCell, setPrevCell] = useState<Cell | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]);
-  const [moveMakeFrom, setMoveMakeFrom] = useState<Cell | null>(null);
-  const [endGameModal, setEndGameModal] = useState<boolean>(false);
+  const [moveMade, setMoveMade] = useState<Cell[]>([]);
   const [promotionModale, setPromotionModale] = useState<boolean>(false);
 
   const handleClick = (cell: Cell) => {
+    if (promotionModale) return;
     if (game.isGameOver()) return;
+    if (!game.isGameStart) return;
+    if (!prevCell && game.player1.color !== cell.piece?.color) {
+      return;
+    }
+
+    if (game.whoPlay.color !== game.player1.color) return;
+    setCurrent(cell);
+
     if (prevCell && !prevCell.isEmpty) {
-      makeMove(prevCell, cell, game, setPossibleMoves, setPrevCell);
-    } else {
-      if (game.whoPlay.color !== cell.piece?.color) {
+      if (game.isPromotion(prevCell, cell)) {
+        setPromotionModale(true);
         return;
       }
+      makeMove(prevCell, cell, game, setPossibleMoves, setPrevCell, setMove);
+    } else {
       setCurrent(cell);
       showPosibleMove(cell, game, setPossibleMoves, setPrevCell);
     }
   };
 
-  useEffect(() => {
-    if (game.toPromote) setPromotionModale(true);
-  }, [game.toPromote]);
+  useEffect(() => {}, [promotionModale]);
 
   useEffect(() => {
-    if (game.isGameOver()) {
-      setEndGameModal(true);
+    const lastMove = game.historyMove[game.historyMove.length - 1];
+
+    if (lastMove) {
+      setMoveMade([
+        game.board[lastMove[0].row][lastMove[0].column],
+        game.board[lastMove[1].row][lastMove[1].column],
+      ]);
     }
   }, [game, game.whoPlay]);
 
   const setPromotionCall = (cell: Cell | null, code: string) => {
-    setPromotion(cell, code, game, setPromotionModale);
+    if (prevCell === null || cell === null) return;
+
+    const move = {
+      from: [prevCell.row, prevCell.column],
+      to: [cell.row, cell.column],
+      promotion: code,
+      time: game.getTimer(game.whoPlay),
+    };
+    setMove(move);
+    setPossibleMoves([]);
+    setPrevCell(null);
+    setPromotionModale(false);
+  };
+
+  const isMoveInMade = (cell: Cell) => {
+    if (moveMade.length < 2) return false;
+
+    const from = moveMade[0];
+    const to = moveMade[1];
+
+    return cell === from || cell === to;
   };
 
   return (
     <div className="container">
-      <PlayerInfo
-        game={game}
-        player={game.player2}
-        setEndGameModal={setEndGameModal}
-      />
       <div className={`board ${game.player1.color === "black" && "reverse"}`}>
         {game.board.map((row, i) =>
           row.map((cell, j) => (
             <div
               key={`${i}${j}`}
               className={`cell ${
-                (current === cell && !cell.isEmpty && "cell-target-piece") ||
-                (moveMakeFrom === cell && "cell-target-piece")
+                isMoveInMade(cell) && cell.color + "-move-made"
               } ${cell.color} `}
               onClick={() => handleClick(cell)}
             >
@@ -209,63 +276,39 @@ const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
           ))
         )}
       </div>
-      <PlayerInfo
-        game={game}
-        player={game.player1}
-        setEndGameModal={setEndGameModal}
-      />
 
-      {promotionModale && game.toPromote && game.toPromote.piece ? (
-        <div className="promotion">
-          <img
-            className="piece"
-            src={`/images/pions/N${game.toPromote.piece.color.charAt(0)}.png`}
-            alt={"Knight"}
-            onClick={() => setPromotionCall(game.toPromote, "N")}
-          />
-          <img
-            className="piece"
-            src={`/images/pions/B${game.toPromote.piece.color.charAt(0)}.png`}
-            alt={"Bishop"}
-            onClick={() => setPromotionCall(game.toPromote, "B")}
-          />
-          <img
-            className="piece"
-            src={`/images/pions/R${game.toPromote.piece.color.charAt(0)}.png`}
-            alt={"Rook"}
-            onClick={() => setPromotionCall(game.toPromote, "R")}
-          />
-          <img
-            className="piece"
-            src={`/images/pions/Q${game.toPromote.piece.color.charAt(0)}.png`}
-            alt={"Queen"}
-            onClick={() => setPromotionCall(game.toPromote, "Q")}
-          />
-        </div>
+      {promotionModale && game.toPromote ? (
+        <>
+          <div className="promotion-background"></div>
+          <div className="promotion">
+            <img
+              className="piece"
+              src={`/images/pions/N${game.whoPlay.color.charAt(0)}.png`}
+              alt={"Knight"}
+              onClick={() => setPromotionCall(game.toPromote, "N")}
+            />
+            <img
+              className="piece"
+              src={`/images/pions/B${game.whoPlay.color.charAt(0)}.png`}
+              alt={"Bishop"}
+              onClick={() => setPromotionCall(game.toPromote, "B")}
+            />
+            <img
+              className="piece"
+              src={`/images/pions/R${game.whoPlay.color.charAt(0)}.png`}
+              alt={"Rook"}
+              onClick={() => setPromotionCall(game.toPromote, "R")}
+            />
+            <img
+              className="piece"
+              src={`/images/pions/Q${game.whoPlay.color.charAt(0)}.png`}
+              alt={"Queen"}
+              onClick={() => setPromotionCall(game.toPromote, "Q")}
+            />
+          </div>
+        </>
       ) : (
         <></>
-      )}
-      {endGameModal ? (
-        <Modal
-          title={
-            game.getWinner() ? `${game.getWinner()?.color} win` : "It's a draw"
-          }
-          onclick={setEndGameModal}
-        >
-          {game.winner === null ? (
-            <div className="win">🫱🏿‍🫲🏻</div>
-          ) : game.winner === game.player1 ? (
-            <div className="win">🎉</div>
-          ) : (
-            <div className="win">😭</div>
-          )}
-        </Modal>
-      ) : (
-        <input
-          value="menu"
-          type="button"
-          onClick={() => setEndGameModal(true)}
-        />
       )}
     </div>
   );
@@ -273,183 +316,758 @@ const Board: React.FC<BoardProps> = ({ game, currentPlayer }) => {
 
 export default Board;
 
-// File: src/components/Board/utils.ts
-import Game from "../../core/config/Game";
-import { Bishop, Knight, Queen, Rook } from "../../core/config/pieces/piece.ts";
-import Cell from "../../core/types/Cell";
+// File: src/components/Game/WebSocketComponent.css
+.game-view{
+    /* height: 100vh; */
+    /* border: 1px solid white; */
+    display: flex;
+    /* overflow: scroll; */
 
-type SetterListCell = (moves: Cell[]) => void;
-
-type SetterCell = (cell: Cell | null) => void;
-
-type SetterBoolean = (value: boolean) => void;
-
-/**
- * Show possibles moves that a the piece in a specific can make
- * @param cell cell contening the piece we want to see move
- * @param game game manager
- * @param setPossibleMoves setter to update the state
- * @param setPrevCell setter to update the state
- */
-const showPosibleMove = (
-  cell: Cell,
-  game: Game,
-  setPossibleMoves: SetterListCell,
-  setPrevCell: SetterCell
-) => {
-  setPossibleMoves(game.possibleMoveFrom(cell));
-  setPrevCell(cell);
-};
-
-/**
- * Move piece from cell to an other one
- * @param from
- * @param to
- * @param game
- * @param setPossibleMoves
- * @param setPrevCell
- * @returns
- */
-const makeMove = (
-  from: Cell,
-  to: Cell,
-  game: Game,
-  setPossibleMoves: SetterListCell,
-  setPrevCell: SetterCell
-) => {
-  if (!from || to === from || to?.piece?.color === from?.piece?.color) {
-    showPosibleMove(to, game, setPossibleMoves, setPrevCell);
-    return;
-  }
-
-  setPossibleMoves([]);
-  game.movePieceFromCellTo(from, to);
-  setPrevCell(null);
-};
-
-const getImage = (type: string, colorChar0: string) =>
-  `/images/pions/${type + colorChar0}.png`;
-
-const setPromotion = (
-  cell: Cell | null,
-  code: string,
-  game: Game,
-  setPromotionModale: SetterBoolean
-) => {
-  if (!cell || !cell.piece || !game.toPromote) return;
-
-  const color = cell.piece.color;
-  console.log(cell);
-  switch (code) {
-    case "N":
-      cell.piece = new Knight(color, getImage("N", color.charAt(0)));
-      console.log("N");
-      break;
-
-    case "B":
-      cell.piece = new Bishop(color, getImage("B", color.charAt(0)));
-      console.log("B");
-      break;
-
-    case "R":
-      cell.piece = new Rook(color, getImage("R", color.charAt(0)));
-      console.log("R");
-      break;
-    case "Q":
-      cell.piece = new Queen(color, getImage("Q", color.charAt(0)));
-      console.log("Q");
-      break;
-  }
-  game.toPromote = null;
-  setPromotionModale(false);
-};
-
-export { showPosibleMove, makeMove, setPromotion };
-
-// File: src/components/Login/Login.css
-.login {
-  width: 25%;
-  border: 1px solid black;
-  background-color: blue;
-}
-.btn {
 }
 
-// File: src/components/Login/Login.tsx
-import React, { useState } from "react";
 
-const Login = () => {
-  const [name, setName] = useState<string>("");
-  const [joinCode, setJoinCode] = useState<string>("");
-  const [hostCode, setHostCode] = useState<string>("");
-  const createGame = () => {
-    //call to back : create partie (socket)
+.game-code-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px
+}
+.game-code{
+    font-size: 23px;
+    /* padding-top: 1rem; */
+    /* border: 1px solid white; */
+    text-align: center;
+    margin-bottom: 1rem;
+    
+}
+
+.game-board-container{
+    position: relative;
+    flex: 1;
+    /* margin-top: 20px; */
+}
+
+.game-board{
+    position: relative;
+    /* margin-top: 20px; */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-height: 98vh;
+    border: 1px solid white;
+    
+}
+.copy-btn{
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+}
+
+.copy-btn:active{
+    color:#81A64C
+}
+
+@media screen and (max-width: 700px){
+    .game-view{
+        flex-direction: column;
+        margin: auto;
+    }
+    
+}
+// File: src/components/Game/WebSocketComponent.tsx
+import React, { useEffect, useState } from "react";
+import Game from "../../core/config/Game.ts";
+import Board from "../Board/Board.tsx";
+import { Color, Move, ReMatch } from "../../core/types/Type.ts";
+import Player from "../../core/types/Player.ts";
+import "./WebSocketComponent.css";
+import Modal from "../Modal/Modal.tsx";
+import LoadingDot from "../../core/icons/LoadingDot.jsx";
+import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
+import { GravityUiCopy } from "../../core/icons/icons.jsx";
+import SoundComponent from "../../core/sounds/SoundComponent.jsx";
+import SoundManager from "../../core/sounds/SoundManager.jsx";
+
+export interface GameProps {
+  playerName: string;
+  isHost: boolean;
+  socket: WebSocket;
+  closeSocket: (code?: number | undefined, reason?: string | undefined) => void;
+  roomId: string;
+}
+const WebSocketComponent: React.FC<GameProps> = ({
+  playerName,
+  isHost,
+  socket,
+  roomId,
+  closeSocket,
+}) => {
+  const [messages, setMessages] = useState<string[]>([]);
+  const [chess, setChess] = useState<Game | null>(null);
+  const [fen, setFen] = useState("");
+  const [move, setMove] = useState<Move | null>(null);
+  const [startGame, setStartGame] = useState<boolean>(false);
+  const [endGameModal, setEndGameModal] = useState<boolean>(false);
+  const [rematch, setRematch] = useState<ReMatch | null>(null); // define if there is a pendding rematch request
+  const [timeLeftTo, setTimeLeftTo] = useState<number>(0);
+  const [soundType, setSoundType] = useState(""); //Play sound after each moves
+
+  socket.onopen = () => {
+    console.log("connected");
   };
 
-  const joinGame = () => {
-    // call to back : join partie (socket)
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes < 10 ? "0" : ""}${minutes}:${
+      seconds < 10 ? "0" : ""
+    }${seconds}`;
+  };
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.type === "move" && chess) {
+      const moveSend = data.content.move;
+      const startTime = data.content.startTime;
+      const moveMaked = chess.move(moveSend);
+      setMove(null);
+
+      if (moveMaked) {
+        setTimeLeftTo(startTime);
+        setSoundType(moveMaked);
+      }
+    } else if (data.type === "findcolor") {
+      // Player who join game send findcolor message to know is color and the send a response
+      if (isHost && chess) {
+        const opponent = data.content;
+        chess.player2.name = opponent.name;
+
+        setColor(chess.player1, chess.player2);
+      }
+    } else if (data.type === "setcolor") {
+      // The host send the color of it's opponent and set is name on game parameters
+      if (!isHost && !chess) {
+        const players = data.content;
+        const game = new Game(players.guest.name, players.guest.color);
+        game.player2.name = players.host.name;
+
+        setChess(game);
+        sendStartGame();
+      }
+    } else if (data.type === "start") {
+      // message send to start the game
+      if (!chess) return;
+      chess.isGameStart = true;
+      setTimeLeftTo(data.content.startTime);
+      const gameTime = data.content.time;
+      chess.timers = { black: gameTime, white: gameTime };
+      setEndGameModal(false);
+      setStartGame(true);
+    } else if (data.type === "rematch") {
+      // Messge send to reset the game and send start request
+      setStartGame(false);
+      const rematch: ReMatch = data.content;
+      setRematch(rematch);
+      if (rematch.response) {
+        chess?.reMatch();
+        setRematch(null);
+        sendStartGame();
+      }
+    }
+  };
+
+  const getMyColor = () => {
+    if (socket) {
+      const me = new Player();
+      me.name = playerName;
+      socket.send(
+        JSON.stringify({
+          type: "findcolor",
+          content: me,
+        })
+      );
+    }
+  };
+
+  const setColor = (host: Player, guest: Player) => {
+    if (socket) {
+      socket.send(
+        JSON.stringify({
+          type: "setcolor",
+          content: { host, guest },
+        })
+      );
+    }
+  };
+
+  const sendMove = (move: Move) => {
+    if (socket && chess && chess.isValidMove2(move)) {
+      socket.send(
+        JSON.stringify({
+          type: "move",
+          content: move,
+        })
+      );
+    }
+  };
+
+  const sendStartGame = () => {
+    if (socket) {
+      socket.send(
+        JSON.stringify({
+          type: "start",
+          content: true,
+        })
+      );
+    }
+  };
+
+  const sendRematch = (rematch: ReMatch) => {
+    if (socket) {
+      socket.send(
+        JSON.stringify({
+          type: "rematch",
+          content: rematch,
+        })
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (socket.OPEN) {
+      if (isHost && !chess) {
+        const color: Color[] = ["white", "black"];
+        const random = Math.round(Math.random());
+        setChess(new Game(playerName, color[random]));
+      } else if (!isHost && !chess) {
+        getMyColor();
+      }
+    }
+  }, [socket]);
+
+  useEffect(() => {
+    if (move === null || !chess) return;
+    // setFen(chess.generateFEN());
+    sendMove(move);
+  }, [chess, move]);
+
+  useEffect(() => {
+    if (startGame && chess) {
+      chess.isGameStart = true;
+    }
+  }, [chess, startGame]);
+
+  useEffect(() => {
+    if (chess && chess.isGameOver()) {
+      setEndGameModal(true);
+    }
+  }, [chess, chess?.whoPlay]);
+
+  useEffect(() => {
+    if (soundType) {
+      const timeout = setTimeout(() => setSoundType(""), 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [soundType]);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
   };
 
   return (
-    <div className="login">
-      <div className="field">
-        <label htmlFor="name">Name :</label>
-        <input
-          className="textinput"
-          type="text"
-          name="name"
-          placeholder="Enter your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+    <div className="game-view">
+      <div className="game-code-container">
+        <h1 className="game-code">Game Room: {roomId}</h1>
+        <GravityUiCopy
+          className="copy-btn"
+          onClick={() => copyToClipboard(roomId)}
         />
       </div>
-      <div className="field">
-        <input
-          className="btn"
-          type="button"
-          value="host game"
-          onClick={createGame}
-        />
-        <input
-          className="textinput"
-          type="text"
-          name="codecreate"
-          placeholder="Code partie will be there"
-          value={hostCode}
-          onChange={(e) => setHostCode(e.target.value)}
-          disabled
-        />
+      <div className="sound">
+        <SoundManager soundType={soundType} />
+      </div>
+
+      {chess ? (
+        <div className="game-board-container">
+          <div className="game-board">
+            <PlayerInfo
+              startGame={startGame}
+              game={chess}
+              player={chess.player2}
+              setEndGameModal={setEndGameModal}
+              startTimeDate={chess.isTurn(chess.player2) ? timeLeftTo : 0}
+            />
+            <Board game={chess} setMove={setMove} startGame={startGame} />
+            <PlayerInfo
+              game={chess}
+              player={chess.player1}
+              setEndGameModal={setEndGameModal}
+              startGame={startGame}
+              startTimeDate={chess.isTurn(chess.player1) ? timeLeftTo : 0}
+            />
+          </div>
+          {endGameModal ? (
+            <Modal
+              title={
+                chess.getWinner()
+                  ? `${chess.getWinner()?.color} win`
+                  : "It's a draw"
+              }
+              onclick={setEndGameModal}
+            >
+              {chess.winner === null ? (
+                <div className="win">🫱🏿‍🫲🏻</div>
+              ) : chess.winner === chess.player1 ? (
+                <div className="win">🎉</div>
+              ) : (
+                <div className="win">😭</div>
+              )}
+
+              {rematch?.request ? (
+                rematch?.requester !== chess.player1.color ? (
+                  <button
+                    className="btn"
+                    type="button"
+                    onClick={() => {
+                      const req: ReMatch = {
+                        request: true,
+                        requester: chess.whoPlay.color,
+                        response: true,
+                      };
+                      sendRematch(req);
+                    }}
+                    style={{ marginTop: "1rem" }}
+                  >
+                    Accept Rematch
+                  </button>
+                ) : (
+                  <button className="btn" type="button">
+                    <LoadingDot width={"40px"} />
+                  </button>
+                )
+              ) : (
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => {
+                    const req: ReMatch = {
+                      request: true,
+                      requester: chess.player1.color,
+                      response: false,
+                    };
+                    sendRematch(req);
+                  }}
+                  style={{ marginTop: "1rem" }}
+                >
+                  Rematch
+                </button>
+              )}
+              <button
+                className="btn"
+                type="button"
+                onClick={() => {
+                  closeSocket();
+                }}
+                style={{ marginTop: "1rem" }}
+              >
+                Home
+              </button>
+            </Modal>
+          ) : (
+            <></>
+          )}
+        </div>
+      ) : (
         <div></div>
+      )}
+    </div>
+  );
+};
+
+export default WebSocketComponent;
+
+// File: src/components/Layout/Layout.css
+.layout{
+    padding-bottom: env(safe-area-inset-bottom);
+}
+// File: src/components/Layout/Layout.jsx
+import React, { useEffect, useState } from "react";
+import CreateGame from "../Login/CreateGame.jsx";
+import WebSocketComponent from "../Game/WebSocketComponent.tsx";
+import { backendWebSocketUrl } from "../../core/config/backends.js";
+import "./Layout.css";
+
+export default function Layout() {
+  const [socket, setSocket] = useState(null);
+  const [playerName, setPlayerName] = useState("");
+  const [isHost, setIsHost] = useState(false);
+  const [roomName, setRoomName] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!roomName) return;
+
+    setLoading(true);
+    const ws = new WebSocket(`${backendWebSocketUrl}/ws/game/${roomName}/`);
+    setSocket(ws);
+  }, [roomName]);
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.onopen = () => {
+      console.log("connected");
+      setLoading(false);
+    };
+
+    socket.onclose = () => {
+      setLoading(false);
+      setSocket(null);
+      console.log("closed");
+    };
+
+    socket.onerror = () => {
+      setError(true);
+      console.log("Error");
+    };
+  }, [socket]);
+
+  return (
+    <div className="layout">
+      {socket && !loading && playerName ? (
+        <WebSocketComponent
+          isHost={isHost}
+          playerName={playerName}
+          socket={socket}
+          roomId={roomName}
+          closeSocket={() => socket.close()}
+        />
+      ) : (
+        <CreateGame
+          setPlayerName={setPlayerName}
+          setIsHost={setIsHost}
+          setRoomName={setRoomName}
+          loading={loading}
+        />
+      )}
+    </div>
+  );
+}
+
+// File: src/components/Login/CreateGame.css
+.container-home{
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+    padding: 20px;
+    min-height: 100vh;
+    /* border: 1px solid white; */
+}
+
+.title-home{
+    height: 80px;
+    font-size: 1.2em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-title{
+    width: 50px;
+    height: 50px;
+}
+.caption-home{
+    max-width: 800px;
+}
+
+.description-home{
+    margin: 20px;
+}
+
+.description-home h2{
+   font-size:1.2em;
+   text-align: center;
+   line-height: 1.1em;
+}
+.description-home>li{
+    margin-top: 20px;
+}
+
+.bold{
+    font-weight:bold;
+    font-size: 1.1em
+}
+
+
+
+.container-form-create-join{
+  display: flex;
+  /* border: 1px solid white; */
+  flex-direction: column;
+  align-items: center;
+  min-width: 350px;
+  width: 60%;
+  max-width: 600px;
+  margin-bottom: 20px;
+  
+}
+
+.menu-create-join {
+    /* border: 1px solid white; */
+    margin: auto;
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    min-width: 350px;
+
+}
+.create-join-content{
+    aspect-ratio: 1;
+    min-width: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #1E1D1A;
+}
+
+.textinput{
+    width: 75%;
+    border: none;
+    height: 50px;
+    margin-bottom: 20px;
+    padding-left: 5%;
+    font-size: 20px;
+    border-radius: 5px;
+    transition:  box-shadow 0.2s ease-out;
+}
+
+.textinput:focus{
+    outline: none;
+    box-shadow: inset 0px 0px 0px 2px #81A64C;
+}
+  
+.tab {
+    cursor: pointer;
+    flex: 1;
+    padding: 20px;
+    text-align: center;
+    font-size: 1em;
+    font-weight: bold;
+    background-color: #1A1A17;
+    transition: background-color 0.2s ease-out;
+}
+/* 
+.tab-inactive:hover{
+    background-color: #302E2D;
+    border:1px solid  rgb(225, 224, 240);
+    
+} */
+  
+.tab-active {
+    background-color: #1E1D1A;
+    /* border:1px solid  rgb(225, 224, 240); */
+}
+
+.btn{
+    width: 80%;
+    border: none;
+    height: 50px;
+    background-color: #81A64C;
+    color: white;
+    font-weight: bold;
+    font-size: 1.1em;
+    border-radius: 5px;
+    transition: background-color 0.2s ease-out;
+    margin-left: auto;
+    margin-right: auto;
+    cursor: pointer;
+}
+
+.btn:hover{
+    background-color: rgb(129, 166, 76, 0.8);
+}
+  
+
+.footer{
+    padding: 10px;
+    color: white;
+    height:  50px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items:center;
+
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .footer a {
+    color: white;
+  }
+// File: src/components/Login/CreateGame.jsx
+import React, { useEffect, useState } from "react";
+import { backendUrl, backendWebSocketUrl } from "../../core/config/backends";
+import "./CreateGame.css";
+import LoadingDot from "../../core/icons/LoadingDot";
+
+const CreateGame = ({ setRoomName, setPlayerName, setIsHost, loading }) => {
+  const [name, setName] = useState("");
+  const [hostName, setHostName] = useState("");
+  const [loadingBtn, setLoadingBtn] = useState(loading);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("create");
+  const [webSocket, setWebSocket] = useState(null);
+
+  useEffect(() => {
+    setLoadingBtn(loading);
+  }, [loading]);
+
+  const handleTabClick = (section) => {
+    setActiveTab(section);
+  };
+
+  const handleCreateGame = async () => {
+    setError(null);
+    try {
+      const response = await fetch(`${backendUrl}/create_game/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const host = data.room_id.split("-")[0];
+        setHostName(host);
+        setPlayerName(name);
+        setIsHost(true);
+        setRoomName(host);
+      } else {
+        setError(data.error || "Une erreur est survenue");
+        setLoadingBtn(false);
+      }
+    } catch (err) {
+      setError("Une erreur est survenue");
+      setLoadingBtn(false);
+    }
+  };
+
+  const joinGame = () => {
+    setLoadingBtn(true);
+    setPlayerName(name);
+    setIsHost(false);
+    setRoomName(hostName);
+  };
+
+  return (
+    <div className="container-home">
+      <div className="caption-home">
+        <div className="title-home">
+          <h1>AncaChess</h1>
+          <img className="image-title" src="images/pions/Nw.png" alt="" />
+        </div>
+
+        <div className="description-home">
+          <h2>Welcome to our online chess platform! </h2>
+        </div>
       </div>
-      <div className="field">
-        <input
-          onClick={joinGame}
-          className="btn"
-          type="button"
-          value="join a game"
-        />
-        <input
-          className="textinput"
-          name="codejoin"
-          type="text"
-          placeholder="Enter code"
-          value={joinCode}
-          onChange={(e) => setJoinCode(e.target.value)}
-        />
+
+      <div className="container-form-create-join">
+        <div className="menu-create-join">
+          <div
+            className={`tab ${
+              activeTab === "create" ? "tab-active" : "tab-inactive"
+            }`}
+            onClick={() => handleTabClick("create")}
+          >
+            Create a Game
+          </div>
+          <div
+            className={`tab ${
+              activeTab === "join" ? "tab-active" : "tab-inactive"
+            }`}
+            onClick={() => handleTabClick("join")}
+          >
+            Join a Game
+          </div>
+        </div>
+
+        {activeTab === "create" && (
+          <div className="create-join-content">
+            <input
+              className="textinput"
+              type="text"
+              name="name"
+              value={name}
+              placeholder="Enter your name"
+              onChange={(e) => setName(e.target.value)}
+            />
+
+            <button
+              className="btn"
+              type="button"
+              onClick={() => {
+                setLoadingBtn(true);
+                handleCreateGame();
+              }}
+            >
+              {!loadingBtn ? "Host game" : <LoadingDot width={"40px"} />}
+            </button>
+          </div>
+        )}
+        {activeTab === "join" && (
+          <div className="create-join-content">
+            <input
+              className="textinput"
+              type="text"
+              name="name"
+              value={name}
+              placeholder="Enter your name"
+              onChange={(e) => setName(e.target.value)}
+            />
+            <input
+              className="textinput"
+              name="codejoin"
+              type="text"
+              placeholder="Enter game code"
+              value={hostName}
+              onChange={(e) => setHostName(e.target.value)}
+            />
+            <button
+              onClick={() => {
+                setLoadingBtn(true);
+                joinGame();
+              }}
+              className="btn"
+              type="button"
+            >
+              {!loading ? "Join a game" : <LoadingDot width={"40px"} />}
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="footer">
+        <span>
+          👋 Hi I'm Antoine software engineer{" "}
+          <a href="https://github.com/antoineTsinga"> Follow me on GitHub</a>
+        </span>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default CreateGame;
 
 // File: src/components/Modal/Modal.css
 .modal{
     position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    
-    
 }
 
 .modal-background{
@@ -522,8 +1140,6 @@ export default function Modal({ title, onclick, children }) {
 // File: src/components/PlayerInfo/PlayerInfo.css
 .section-player{
     width: 100%;
-    max-width: 700px;
-    max-height: 700px;
     font-weight: bold; 
     background-color: rgb(169, 182, 182);
     display: flex;
@@ -535,7 +1151,7 @@ export default function Modal({ title, onclick, children }) {
     width: 50px;
     height: 50px;
     background-color: aqua;
-    margin: 10px;
+    margin: 5px;
 }
 
 .info-player{
@@ -562,7 +1178,7 @@ export default function Modal({ title, onclick, children }) {
 .timer{
     padding: 10px;
     text-align: center;
-    width: 60px;
+    width: 100px;
     height: fit-content;
     background-color: rgb(88, 97, 97);
     border-radius: 3px;
@@ -585,7 +1201,7 @@ export default function Modal({ title, onclick, children }) {
 
 
 // File: src/components/PlayerInfo/PlayerInfo.tsx
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Game from "../../core/config/Game";
 import Player from "../../core/types/Player";
 import { Color } from "../../core/types/Type";
@@ -595,65 +1211,78 @@ import { Clock } from "../../core/icons/icons";
 export interface BoardProps {
   game: Game;
   player: Player;
-  setEndGameModal: (value: boolean) => void;
+  setEndGameModal: React.Dispatch<boolean>;
+  startGame: boolean;
+  startTimeDate: number;
 }
 
 const PlayerInfo: React.FC<BoardProps> = ({
   game,
   player,
   setEndGameModal,
+  startGame, // if the as start
+  startTimeDate, // The date from which we start counting the time elapsed by the player
 }) => {
   const [active, setActive] = useState<boolean>(false);
   const [time, setTime] = useState<number>(game.timers[player.color]);
   const [advantage, setAdvantage] = useState<number>(0);
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout>();
+  const colortakenPieces: Color = game.getOpponent(player).color;
 
-  const colortakenPieces: Color = player.color === "black" ? "white" : "black";
-  const adversaryColorTakenPieces: Color =
-    player.color !== "black" ? "white" : "black";
+  const countAdvantage = useCallback(
+    (game: Game) => {
+      const point = game
+        .leftPieceTo(player)
+        .reduce((p, p2) => p + p2.piece.value, 0);
+      const adversary = game
+        .leftPieceTo(game.getOpponent(player))
+        .reduce((p, p2) => p + p2.piece.value, 0);
+
+      return Math.max(0, point - adversary);
+    },
+    [player]
+  );
+
+  const interval = useCallback(() => {
+    const now = Date.now() / 1000;
+    setTime(game.timers[player.color] - (now - startTimeDate));
+  }, [startTimeDate]);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      game.timers[player.color] = Math.max(game.timers[player.color] - 1);
-      setTime((prevSeconds) => Math.max(0, prevSeconds - 1));
-    }, 1000);
+    if (!startGame) return;
 
-    if (time === 0 || game.isGameOver()) {
-      game.setWinner();
-      setEndGameModal(true);
-      clearInterval(intervalId);
-    }
-
-    const point = game.takenPieces[colortakenPieces].reduce(
-      (p, p2) => p + p2.value,
-      0
-    );
-    const adversary = game.takenPieces[adversaryColorTakenPieces].reduce(
-      (p, p2) => p + p2.value,
-      0
-    );
-
-    setAdvantage(Math.max(0, point - adversary));
-    if (game.whoPlay === player) {
+    if (game.isTurn(player)) {
+      // start timer if turn to play
       setActive(true);
+      setIntervalId(setInterval(interval, 50));
     } else {
       setActive(false);
       clearInterval(intervalId);
     }
+
+    setAdvantage(countAdvantage(game));
+
     return () => clearInterval(intervalId);
-  }, [
-    adversaryColorTakenPieces,
-    colortakenPieces,
-    game,
-    game.takenPieces,
-    game.timers,
-    game.whoPlay,
-    player,
-    time,
-  ]);
+  }, [countAdvantage, game, interval, player, startGame, startTimeDate]);
+
+  useEffect(() => {
+    if (time <= 0 || game.isGameOver()) {
+      setTime(Math.max(0, time));
+      game.timers[player.color] = 0;
+      game.setWinner();
+      setActive(false);
+      setEndGameModal(true);
+      clearInterval(intervalId);
+    }
+  }, [game, time]);
+
+  useEffect(() => {
+    setTime(game.timers[player.color]);
+  }, [game.timers, player.color]);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
-    const seconds = time % 60;
+    const seconds = Math.floor(time % 60);
     return `${minutes < 10 ? "0" : ""}${minutes}:${
       seconds < 10 ? "0" : ""
     }${seconds}`;
@@ -676,11 +1305,14 @@ const PlayerInfo: React.FC<BoardProps> = ({
         );
       });
   };
+
   return (
     <div className="section-player">
       <img className="avater" src="/images/user.png" alt={player.name} />
       <div className="info-player">
-        <span>{player.name + " " + player.color}</span>
+        <span>
+          {player.name ? player.name : "Waiting for your opponent..."}
+        </span>
         <div className="pieces">
           <div className="pawn relative">{printPiece("P")}</div>
           <div className="knight relative">{printPiece("N")}</div>
@@ -701,12 +1333,19 @@ const PlayerInfo: React.FC<BoardProps> = ({
 
 export default PlayerInfo;
 
+// File: src/core/config/backends.js
+const backendUrl = process.env.REACT_APP_API_URL;
+const backendWebSocketUrl = process.env.REACT_APP_BACKEND_WEBSOCKET_URL;
+
+export { backendUrl, backendWebSocketUrl };
+
 // File: src/core/config/Game.ts
-import { BoardType, Color } from "../types/Type";
+import { BoardType, Color, Move } from "../types/Type";
 import Player from "../types/Player.ts";
 import { createBoard } from "./initialBoard.ts";
 import IPiece from "../types/IPiece.ts";
 import Cell from "../types/Cell.ts";
+import { Bishop, Knight, Queen, Rook } from "./pieces/piece.ts";
 
 export default class Game {
   player1: Player = new Player();
@@ -714,12 +1353,14 @@ export default class Game {
   hostCode: string;
   board: BoardType;
   history: string[] = [];
+  historyMove: Cell[][] = [];
   isGameStart: boolean = false;
   winner: Player | null = null;
   turn: number = 1;
   whoPlay: Player;
   toPromote: Cell | null = null;
   LastFiftyMoveWithoutTake: number[] = [];
+  numberFullMoves: number = 1;
   timers: { black: number; white: number } = { black: 600, white: 600 };
   takenPieces: { black: IPiece[]; white: IPiece[] } = { black: [], white: [] };
   kingPos: { white: [number, number]; black: [number, number] } = {
@@ -727,19 +1368,29 @@ export default class Game {
     black: [0, 4],
   };
 
-  constructor(namePlayer1: string) {
-    const color: { 0: Color; 1: Color } = { 0: "white", 1: "black" };
-    const random = Math.round(Math.random());
-    this.player1.color = color[random];
-    this.player1.name = namePlayer1;
-    this.player2.color = color[1 - random];
+  constructor(namePlayer1: string, color: Color) {
+    const colorOpponent: { black: Color; white: Color } = {
+      black: "white",
+      white: "black",
+    };
 
-    this.whoPlay = random === 0 ? this.player1 : this.player2;
+    this.player1.color = color;
+    this.player1.name = namePlayer1;
+    this.player2.color = colorOpponent[color];
+
+    this.whoPlay = color === "white" ? this.player1 : this.player2;
     this.hostCode = Math.random().toString();
 
     this.board = createBoard();
   }
 
+  getOpponent(player: Player): Player {
+    return this.player1 === player ? this.player2 : this.player1;
+  }
+
+  isTurn(player: Player): boolean {
+    return this.whoPlay === player;
+  }
   getTimer(player: Player): number {
     return this.timers[player.color];
   }
@@ -779,13 +1430,19 @@ export default class Game {
     }
     this.board = createBoard();
     this.history = [];
-    this.isGameStart = true;
+    this.historyMove = [];
+    this.isGameStart = false;
     this.winner = null;
     this.turn = 1;
     this.toPromote = null;
     this.LastFiftyMoveWithoutTake = [];
+    this.numberFullMoves = 1;
     this.takenPieces = { black: [], white: [] };
     this.timers = { black: 600, white: 600 };
+    this.kingPos = {
+      white: [7, 4],
+      black: [0, 4],
+    };
   }
 
   getkingCell(color: Color): Cell {
@@ -935,6 +1592,20 @@ export default class Game {
     );
   }
 
+  isPromotion(from: Cell, to: Cell): boolean {
+    if (
+      this.isValidMove(from, to) &&
+      from.piece?.code === "P" &&
+      (to.row === 0 || to.row === 7)
+    ) {
+      this.toPromote = to;
+
+      return true;
+    }
+
+    return false;
+  }
+
   changeTurn() {
     this.whoPlay = this.whoPlay === this.player1 ? this.player2 : this.player1;
   }
@@ -960,24 +1631,45 @@ export default class Game {
     return possibleMoves;
   }
 
-  movePieceFromCellTo(from: Cell, to: Cell): boolean {
+  isValidMove(from: Cell, to: Cell): boolean {
     const possibleMoves = this.possibleMoveFrom(from);
+    return possibleMoves?.includes(to);
+  }
 
-    if (from.piece == null || !possibleMoves?.includes(to)) {
-      return false;
-    }
+  isValidMove2(move: Move): boolean {
+    const from = this.board[move.from[0]][move.from[1]];
+    const to = this.board[move.to[0]][move.to[1]];
+    const possibleMoves = this.possibleMoveFrom(from);
+    return possibleMoves?.includes(to);
+  }
 
-    if (to.piece) {
-      this.takenPieces[to.piece.color].push(to.piece);
+  copyInstance(instance) {
+    const copy = new instance.constructor();
+    for (let key in instance) {
+      if (instance.hasOwnProperty(key)) {
+        copy[key] = instance[key];
+      }
     }
+    return copy;
+  }
+
+  movePieceFromCellTo(
+    from: Cell,
+    to: Cell,
+    promotion: string | null = null
+  ): Move | null {
+    if (!from.piece || !this.isValidMove(from, to)) return null;
+
+    to.piece && this.takenPieces[to.piece.color].push(to.piece); // add in stack when taken pieces
+
+    this.historyMove.push([this.copyInstance(from), this.copyInstance(to)]);
 
     if (from.piece.code === "P") {
-      this.makePawnMove(from, to);
+      this.makePawnMove(from, to, promotion);
     } else if (
       from.piece.code === "K" &&
-      Math.abs(from.column - to.column) === 2
+      Math.abs(from.column - to.column) === 2 // move from two cells roque
     ) {
-      //roque
       this.makeRoqueMove(from, to);
     } else {
       from.movePieceTo(to);
@@ -994,6 +1686,16 @@ export default class Game {
 
     this.history.push(this.stringifyBoard());
 
+    const move = {
+      from: [from.row, from.column],
+      to: [to.row, to.column],
+      promotion,
+      timer: this.timers[this.whoPlay.color],
+      color: this.whoPlay.color,
+    };
+
+    if (this.whoPlay.color === "black") this.numberFullMoves += 1; //count full moves
+    this.turn += 1;
     this.changeTurn(); //change turn
 
     if (to.piece?.code === "K") {
@@ -1004,10 +1706,11 @@ export default class Game {
     if (this.isGameOver()) {
       this.setWinner();
     }
-    return true;
+
+    return move;
   }
 
-  makePawnMove(from: Cell, to: Cell) {
+  makePawnMove(from: Cell, to: Cell, promotion: string | null = null) {
     if (
       (from.row === 6 && to.row === 4) || // some pieces can possibly make an enpassant
       (from.row === 1 && to.row === 3)
@@ -1028,9 +1731,61 @@ export default class Game {
       from.movePieceTo(to);
     }
 
-    if (to.row === 0 || to.row === 7) {
-      this.toPromote = to;
+    if (promotion) {
+      this.setPromotion(to, promotion);
     }
+  }
+
+  move({ from, to, promotion, timer, color }: Move): string {
+    const fromCell = this.board[from[0]][from[1]];
+    const toCell = this.board[to[0]][to[1]];
+    this.timers[color] = timer;
+
+    const isCastle =
+      fromCell?.piece?.code === "K" &&
+      Math.abs(fromCell.column - toCell.column) === 2;
+
+    const isCapture = !toCell.isEmpty;
+
+    if (this.movePieceFromCellTo(fromCell, toCell, promotion)) {
+      if (this.isInCheck(this.whoPlay)) {
+        return "check";
+      } else if (isCastle) {
+        return "castle";
+      } else if (promotion) {
+        return "promote";
+      } else if (!isCapture) {
+        return "move";
+      } else if (isCapture) {
+        return "capture";
+      }
+    }
+
+    return "wrong";
+  }
+
+  getImage = (type: string, colorChar0: string) =>
+    `/images/pions/${type + colorChar0}.png`;
+
+  setPromotion(cell: Cell, code: string) {
+    const color = cell.piece.color;
+    switch (code) {
+      case "N":
+        cell.piece = new Knight(color, this.getImage("N", color.charAt(0)));
+        break;
+
+      case "B":
+        cell.piece = new Bishop(color, this.getImage("B", color.charAt(0)));
+        break;
+
+      case "R":
+        cell.piece = new Rook(color, this.getImage("R", color.charAt(0)));
+        break;
+      case "Q":
+        cell.piece = new Queen(color, this.getImage("Q", color.charAt(0)));
+        break;
+    }
+    this.toPromote = null;
   }
 
   makeRoqueMove(from: Cell, to: Cell) {
@@ -1315,6 +2070,114 @@ export default class Game {
     }
     return true;
   }
+
+  generateFEN(): string {
+    const board = this.board.map((cellRow) =>
+      cellRow.map((cell) => {
+        if (!cell.piece) return "";
+        const symbol =
+          cell.piece.color === "black"
+            ? cell.piece.code.toLowerCase()
+            : cell.piece.code;
+        return symbol;
+      })
+    );
+    let castlingRights = "";
+    let enPassant = "-";
+
+    const pieces = this.board.flat().filter((cell) => cell.piece);
+
+    // Déterminer les droits de roque
+    const whiteKing = pieces.find(
+      (p) => p.piece?.code === "K" && p.piece.color === "white"
+    );
+    const blackKing = pieces.find(
+      (p) => p.piece?.code === "K" && p.piece.color === "black"
+    );
+    const whiteRooks = pieces.filter(
+      (p) => p.piece?.code === "R" && p.piece.color === "white"
+    );
+    const blackRooks = pieces.filter(
+      (p) => p.piece?.code === "R" && p.piece.color === "black"
+    );
+
+    if (whiteKing && whiteKing.piece && whiteKing.piece.isFirstMove) {
+      if (
+        whiteRooks.some(
+          (r) => r.row === 7 && r.column === 7 && r.piece?.isFirstMove
+        )
+      ) {
+        castlingRights += "K";
+      }
+      if (
+        whiteRooks.some(
+          (r) => r.row === 7 && r.column === 0 && r.piece?.isFirstMove
+        )
+      ) {
+        castlingRights += "Q";
+      }
+    }
+    if (blackKing && blackKing.piece && blackKing.piece.isFirstMove) {
+      if (
+        blackRooks.some(
+          (r) => r.row === 0 && r.column === 7 && r.piece?.isFirstMove
+        )
+      )
+        castlingRights += "k";
+      if (
+        blackRooks.some(
+          (r) => r.row === 0 && r.column === 0 && r.piece?.isFirstMove
+        )
+      )
+        castlingRights += "q";
+    }
+
+    if (!castlingRights) castlingRights = "-";
+
+    // Déterminer la prise en passant
+    const enPassantPawn = pieces.find(
+      (p) => p.piece?.code === "P" && p.piece.enPassant
+    );
+    if (enPassantPawn && enPassantPawn.piece) {
+      const enPassantRow =
+        enPassantPawn.piece.color === "white"
+          ? enPassantPawn.row - 1
+          : enPassantPawn.row + 1;
+      const enPassantCol = enPassantPawn.column;
+      enPassant = `${String.fromCharCode("a".charCodeAt(0) + enPassantCol)}${
+        8 - enPassantRow
+      }`;
+    }
+
+    // Générer la partie position de la FEN
+    const fenPosition = board
+      .map((row) => {
+        let emptyCount = 0;
+        return (
+          row
+            .map((square) => {
+              if (square === "") {
+                emptyCount++;
+                return "";
+              } else {
+                const result =
+                  emptyCount > 0 ? `${emptyCount}${square}` : square;
+                emptyCount = 0;
+                return result;
+              }
+            })
+            .join("") + (emptyCount > 0 ? emptyCount : "")
+        );
+      })
+      .join("/");
+
+    // Combiner toutes les parties pour former la FEN
+    return `${fenPosition} ${this.whoPlay.color.charAt(
+      0
+    )} ${castlingRights} ${enPassant} ${this.LastFiftyMoveWithoutTake.length} ${
+      this.numberFullMoves
+    }`;
+  }
 }
 
 // File: src/core/config/initialBoard.ts
@@ -1359,6 +2222,72 @@ import Pawn from "../../types/Pawn.ts";
 
 
 export {King, Queen, Bishop, Knight, Rook, Pawn} 
+// File: src/core/config/utils.ts
+import Game from "./Game.ts";
+
+import Cell from "../types/Cell.ts";
+import { Move } from "../types/Type.ts";
+
+type SetterListCell = (moves: Cell[]) => void;
+
+type SetterCell = (cell: Cell | null) => void;
+type SetterBoolean = (value: boolean) => void;
+
+/**
+ * Show possibles moves that a the piece in a specific can make
+ * @param cell cell contening the piece we want to see move
+ * @param game game manager
+ * @param setPossibleMoves setter to update the state
+ * @param setPrevCell setter to update the state
+ */
+const showPosibleMove = (
+  cell: Cell,
+  game: Game,
+  setPossibleMoves: SetterListCell,
+  setPrevCell: SetterCell
+) => {
+  setPossibleMoves(game.possibleMoveFrom(cell));
+  setPrevCell(cell);
+};
+
+/**
+ * Move piece from cell to an other one
+ * @param from
+ * @param to
+ * @param promotion
+ * @param game
+ * @param setPossibleMoves
+ * @param setPrevCell
+ * @returns
+ */
+const makeMove = (
+  from: Cell,
+  to: Cell,
+  game: Game,
+  setPossibleMoves: SetterListCell,
+  setPrevCell: SetterCell,
+  setCurrentPlayerMove: React.Dispatch<React.SetStateAction<Move | null>>
+) => {
+  if (!from || to === from || to?.piece?.color === from?.piece?.color) {
+    showPosibleMove(to, game, setPossibleMoves, setPrevCell);
+    return;
+  }
+  setPossibleMoves([]);
+
+  const move: Move = {
+    from: [from.row, from.column],
+    to: [to.row, to.column],
+    promotion: null,
+    timer: game.getTimer(game.whoPlay),
+    color: game.whoPlay.color,
+  };
+
+  setCurrentPlayerMove(move);
+  setPrevCell(null);
+};
+
+export { showPosibleMove, makeMove };
+
 // File: src/core/config/variables/pieces.ts
 import { Bishop, King, Knight, Pawn, Queen, Rook } from "../pieces/piece.ts";
 
@@ -1444,6 +2373,8 @@ const initialPositions = {
 export { initialPositions };
 
 // File: src/core/icons/icons.jsx
+import LoadingDot from "./LoadingDot";
+
 const Clock = (props) => {
   return (
     <svg
@@ -1473,7 +2404,264 @@ const Close = (props) => {
     </svg>
   );
 };
-export { Clock, Close };
+
+const GravityUiCopy = (props) => {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" {...props}>
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M12 2.5H8A1.5 1.5 0 0 0 6.5 4v1H8a3 3 0 0 1 3 3v1.5h1A1.5 1.5 0 0 0 13.5 8V4A1.5 1.5 0 0 0 12 2.5M11 11h1a3 3 0 0 0 3-3V4a3 3 0 0 0-3-3H8a3 3 0 0 0-3 3v1H4a3 3 0 0 0-3 3v4a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3zM4 6.5h4A1.5 1.5 0 0 1 9.5 8v4A1.5 1.5 0 0 1 8 13.5H4A1.5 1.5 0 0 1 2.5 12V8A1.5 1.5 0 0 1 4 6.5"
+        clipRule="evenodd"
+      ></path>
+    </svg>
+  );
+};
+
+export { Clock, Close, LoadingDot, GravityUiCopy };
+
+// File: src/core/icons/LoadingDot.jsx
+const LoadingDot = (props) => {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <circle cx="4" cy="12" r="0" fill="currentColor">
+        <animate
+          fill="freeze"
+          attributeName="r"
+          begin="0;svgSpinners3DotsMove1.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="0;3"
+        />
+        <animate
+          fill="freeze"
+          attributeName="cx"
+          begin="svgSpinners3DotsMove7.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="4;12"
+        />
+        <animate
+          fill="freeze"
+          attributeName="cx"
+          begin="svgSpinners3DotsMove5.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="12;20"
+        />
+        <animate
+          id="svgSpinners3DotsMove0"
+          fill="freeze"
+          attributeName="r"
+          begin="svgSpinners3DotsMove3.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="3;0"
+        />
+        <animate
+          id="svgSpinners3DotsMove1"
+          fill="freeze"
+          attributeName="cx"
+          begin="svgSpinners3DotsMove0.end"
+          dur="0.001s"
+          values="20;4"
+        />
+      </circle>
+      <circle cx="4" cy="12" r="3" fill="currentColor">
+        <animate
+          fill="freeze"
+          attributeName="cx"
+          begin="0;svgSpinners3DotsMove1.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="4;12"
+        />
+        <animate
+          fill="freeze"
+          attributeName="cx"
+          begin="svgSpinners3DotsMove7.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="12;20"
+        />
+        <animate
+          id="svgSpinners3DotsMove2"
+          fill="freeze"
+          attributeName="r"
+          begin="svgSpinners3DotsMove5.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="3;0"
+        />
+        <animate
+          id="svgSpinners3DotsMove3"
+          fill="freeze"
+          attributeName="cx"
+          begin="svgSpinners3DotsMove2.end"
+          dur="0.001s"
+          values="20;4"
+        />
+        <animate
+          fill="freeze"
+          attributeName="r"
+          begin="svgSpinners3DotsMove3.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="0;3"
+        />
+      </circle>
+      <circle cx="12" cy="12" r="3" fill="currentColor">
+        <animate
+          fill="freeze"
+          attributeName="cx"
+          begin="0;svgSpinners3DotsMove1.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="12;20"
+        />
+        <animate
+          id="svgSpinners3DotsMove4"
+          fill="freeze"
+          attributeName="r"
+          begin="svgSpinners3DotsMove7.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="3;0"
+        />
+        <animate
+          id="svgSpinners3DotsMove5"
+          fill="freeze"
+          attributeName="cx"
+          begin="svgSpinners3DotsMove4.end"
+          dur="0.001s"
+          values="20;4"
+        />
+        <animate
+          fill="freeze"
+          attributeName="r"
+          begin="svgSpinners3DotsMove5.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="0;3"
+        />
+        <animate
+          fill="freeze"
+          attributeName="cx"
+          begin="svgSpinners3DotsMove3.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="4;12"
+        />
+      </circle>
+      <circle cx="20" cy="12" r="3" fill="currentColor">
+        <animate
+          id="svgSpinners3DotsMove6"
+          fill="freeze"
+          attributeName="r"
+          begin="0;svgSpinners3DotsMove1.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="3;0"
+        />
+        <animate
+          id="svgSpinners3DotsMove7"
+          fill="freeze"
+          attributeName="cx"
+          begin="svgSpinners3DotsMove6.end"
+          dur="0.001s"
+          values="20;4"
+        />
+        <animate
+          fill="freeze"
+          attributeName="r"
+          begin="svgSpinners3DotsMove7.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="0;3"
+        />
+        <animate
+          fill="freeze"
+          attributeName="cx"
+          begin="svgSpinners3DotsMove5.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="4;12"
+        />
+        <animate
+          fill="freeze"
+          attributeName="cx"
+          begin="svgSpinners3DotsMove3.end"
+          calcMode="spline"
+          dur="0.5s"
+          keySplines=".36,.6,.31,1"
+          values="12;20"
+        />
+      </circle>
+    </svg>
+  );
+};
+
+export default LoadingDot;
+
+// File: src/core/sounds/SoundManager.jsx
+import React, { useEffect, useRef } from "react";
+
+const SoundManager = ({ soundType }) => {
+  const moveSound = useRef(null);
+  const captureSound = useRef(null);
+  const checkSound = useRef(null);
+  const castleSound = useRef(null);
+  const promotionSound = useRef(null);
+
+  useEffect(() => {
+    switch (soundType) {
+      case "move":
+        moveSound.current.play();
+        break;
+      case "capture":
+        captureSound.current.play();
+        break;
+      case "check":
+        checkSound.current.play();
+        break;
+      case "castle":
+        castleSound.current.play();
+        break;
+      case "promote":
+        promotionSound.current.play();
+        break;
+      default:
+        break;
+    }
+  }, [soundType]);
+
+  return (
+    <div>
+      <audio ref={moveSound} src="/sounds/move.mp3" />
+      <audio ref={captureSound} src="/sounds/capture.mp3" />
+      <audio ref={checkSound} src="/sounds/check.mp3" />
+      <audio ref={castleSound} src="/sounds/castle.mp3" />
+      <audio ref={promotionSound} src="/sounds/promote.mp3" />
+    </div>
+  );
+};
+
+export default SoundManager;
 
 // File: src/core/types/Bishop.ts
 import Cell from "./Cell";
@@ -1559,8 +2747,7 @@ export default class Cell {
   }
 
   movePieceTo(cell: Cell): boolean {
-    const possible = this.piece?.getPossiblesMove(this, this.board);
-    if (this.piece == null || !possible?.includes(cell)) {
+    if (this.piece == null) {
       return false;
     }
 
@@ -1613,8 +2800,6 @@ export default class King implements IPiece {
   getNeighbors(board: BoardType, row: number, col: number): Cell[] {
     return [];
   }
-
-  isfirstMove: boolean;
 
   getPossiblesMove(from: Cell, board: BoardType): Cell[] {
     const ans: Cell[] = [];
@@ -1700,7 +2885,6 @@ export default class Knight implements IPiece {
   constructor(color: Color, img: string) {
     this.color = color;
     this.img = img;
-    this.isFirstMove = true;
   }
   getNeighbors(board: BoardType, row: number, col: number): Cell[] {
     return [];
@@ -1879,7 +3063,7 @@ export default class Queen implements IPiece {
   isFirstMove: boolean = true;
   name: string = "Queen";
   code: string = "Q";
-  value: number = 10;
+  value: number = 9;
   enPassant: Cell | null;
 
   constructor(color: Color, img: string) {
@@ -1952,8 +3136,6 @@ export default class Rook implements IPiece {
     return [];
   }
 
-  isfirstMove: boolean;
-
   getPossiblesMove(from: Cell, board: BoardType): Cell[] {
     const directions = [
       [0, -1],
@@ -2000,6 +3182,20 @@ export type BoardType = Cell[][];
 export interface BoardProps {
   game: Game;
 }
+
+export type Move = {
+  from: number[];
+  to: number[];
+  promotion: string | null;
+  timer: number;
+  color: Color;
+};
+
+export type ReMatch = {
+  request: boolean;
+  requester: Color;
+  response: boolean;
+};
 
 // File: src/index.css
 body {

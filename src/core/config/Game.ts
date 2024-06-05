@@ -349,6 +349,7 @@ export default class Game {
       to: [to.row, to.column],
       promotion,
       timer: this.timers[this.whoPlay.color],
+      color: this.whoPlay.color,
     };
 
     if (this.whoPlay.color === "black") this.numberFullMoves += 1; //count full moves
@@ -393,11 +394,32 @@ export default class Game {
     }
   }
 
-  move({ from, to, promotion, timer, color }: Move) {
+  move({ from, to, promotion, timer, color }: Move): string {
     const fromCell = this.board[from[0]][from[1]];
     const toCell = this.board[to[0]][to[1]];
     this.timers[color] = timer;
-    return this.movePieceFromCellTo(fromCell, toCell, promotion);
+
+    const isCastle =
+      fromCell?.piece?.code === "K" &&
+      Math.abs(fromCell.column - toCell.column) === 2;
+
+    const isCapture = !toCell.isEmpty;
+
+    if (this.movePieceFromCellTo(fromCell, toCell, promotion)) {
+      if (this.isInCheck(this.whoPlay)) {
+        return "check";
+      } else if (isCastle) {
+        return "castle";
+      } else if (promotion) {
+        return "promote";
+      } else if (!isCapture) {
+        return "move";
+      } else if (isCapture) {
+        return "capture";
+      }
+    }
+
+    return "wrong";
   }
 
   getImage = (type: string, colorChar0: string) =>
