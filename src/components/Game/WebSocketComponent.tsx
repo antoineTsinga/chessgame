@@ -15,7 +15,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
   const [move, setMove] = useState<Move | null>(null);
   const [startGame, setStartGame] = useState<boolean>(false);
   const [endGameModal, setEndGameModal] = useState<boolean>(false);
-  const [rematch, setRematch] = useState<ReMatch | null>(null);
+  const [rematch, setRematch] = useState<ReMatch | null>(null); // define if there is a pendding rematch request
   const [timeLeftTo, setTimeLeftTo] = useState<number>(0);
 
   socket.onopen = () => {
@@ -32,6 +32,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
 
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
+
     if (data.type === "move" && chess) {
       const moveSend = data.content.move;
       const startTime = data.content.startTime;
@@ -41,13 +42,15 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
 
       if (moveMaked) setTimeLeftTo(startTime);
     } else if (data.type === "findcolor") {
+      // Player who join game send findcolor message to know is color and the send a response
       if (isHost && chess) {
         const opponent = data.content;
         chess.player2.name = opponent.name;
-        chess.isGameStart = true;
+
         setColor(chess.player1, chess.player2);
       }
     } else if (data.type === "setcolor") {
+      // The host send the color of it's opponent and set is name on game parameters
       if (!isHost && !chess) {
         const players = data.content;
         const game = new Game(players.guest.name, players.guest.color);
@@ -57,18 +60,24 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
         sendStartGame();
       }
     } else if (data.type === "start") {
-      setTimeLeftTo(data.content);
+      // message send to start the game
+      if (!chess) return;
+      chess.isGameStart = true;
+      setTimeLeftTo(data.content.startTime);
+      const gameTime = data.content.time;
+      chess.timers = { black: gameTime, white: gameTime };
+      setEndGameModal(false);
       setStartGame(true);
     } else if (data.type === "rematch") {
+      // Messge send to reset the game and send start request
+      setStartGame(false);
       const rematch: ReMatch = data.content;
       setRematch(rematch);
       if (rematch.response) {
         chess?.reMatch();
         setRematch(null);
-        setEndGameModal(false);
+        sendStartGame();
       }
-    } else if (data.type === "getTime") {
-      console.log("getTime", data.content);
     }
   };
 

@@ -89,7 +89,7 @@ export default class Game {
     this.board = createBoard();
     this.history = [];
     this.historyMove = [];
-    this.isGameStart = true;
+    this.isGameStart = false;
     this.winner = null;
     this.turn = 1;
     this.toPromote = null;

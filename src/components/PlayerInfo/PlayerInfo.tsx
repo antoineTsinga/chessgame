@@ -67,10 +67,15 @@ const PlayerInfo: React.FC<BoardProps> = ({
       setTime(Math.max(0, time));
       game.timers[player.color] = 0;
       game.setWinner();
+      setActive(false);
       setEndGameModal(true);
       clearInterval(intervalId);
     }
   }, [game, time]);
+
+  useEffect(() => {
+    setTime(game.timers[player.color]);
+  }, [game.timers, player.color]);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
