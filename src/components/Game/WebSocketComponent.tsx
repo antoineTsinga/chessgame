@@ -7,6 +7,7 @@ import "./WebSocketComponent.css";
 import Modal from "../Modal/Modal.tsx";
 import LoadingDot from "../../core/icons/LoadingDot.jsx";
 import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
+import { GravityUiCopy } from "../../core/icons/icons.jsx";
 
 export interface GameProps {
   playerName: string;
@@ -180,9 +181,20 @@ const WebSocketComponent: React.FC<GameProps> = ({
     }
   }, [chess, chess?.whoPlay]);
 
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+  };
+
   return (
     <div className="game-view">
-      <h1 className="game-code">Game Room: {roomId}</h1>
+      <div className="game-code-container">
+        <h1 className="game-code">Game Room: {roomId}</h1>
+        <GravityUiCopy
+          className="copy-btn"
+          onClick={() => copyToClipboard(roomId)}
+        />
+      </div>
+
       {chess ? (
         <div className="game-board">
           <div>
