@@ -29,6 +29,7 @@ export default function Layout() {
 
     socket.onclose = () => {
       setLoading(false);
+      setSocket(null);
       console.log("closed");
     };
 
@@ -40,12 +41,13 @@ export default function Layout() {
 
   return (
     <div className="layout">
-      {socket && !loading ? (
+      {socket && !loading && playerName ? (
         <WebSocketComponent
           isHost={isHost}
           playerName={playerName}
           socket={socket}
           roomId={roomName}
+          closeSocket={() => socket.close()}
         />
       ) : (
         <CreateGame

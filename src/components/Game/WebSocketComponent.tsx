@@ -8,7 +8,20 @@ import Modal from "../Modal/Modal.tsx";
 import LoadingDot from "../../core/icons/LoadingDot.jsx";
 import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
 
-const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
+export interface GameProps {
+  playerName: string;
+  isHost: boolean;
+  socket: WebSocket;
+  closeSocket: (code?: number | undefined, reason?: string | undefined) => void;
+  roomId: string;
+}
+const WebSocketComponent: React.FC<GameProps> = ({
+  playerName,
+  isHost,
+  socket,
+  roomId,
+  closeSocket,
+}) => {
   const [messages, setMessages] = useState<string[]>([]);
   const [chess, setChess] = useState<Game | null>(null);
   const [fen, setFen] = useState("");
@@ -36,7 +49,6 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
     if (data.type === "move" && chess) {
       const moveSend = data.content.move;
       const startTime = data.content.startTime;
-      console.log(moveSend);
       const moveMaked = chess.move(moveSend);
       setMove(null);
 
@@ -80,8 +92,6 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
       }
     }
   };
-
-  socket.onclose = () => {};
 
   const getMyColor = () => {
     if (socket) {
@@ -222,6 +232,7 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
                       };
                       sendRematch(req);
                     }}
+                    style={{ marginTop: "1rem" }}
                   >
                     Accept Rematch
                   </button>
@@ -242,10 +253,21 @@ const WebSocketComponent = ({ playerName, isHost, socket, roomId }) => {
                     };
                     sendRematch(req);
                   }}
+                  style={{ marginTop: "1rem" }}
                 >
                   Rematch
                 </button>
               )}
+              <button
+                className="btn"
+                type="button"
+                onClick={() => {
+                  closeSocket();
+                }}
+                style={{ marginTop: "1rem" }}
+              >
+                Home
+              </button>
             </Modal>
           ) : (
             <></>
