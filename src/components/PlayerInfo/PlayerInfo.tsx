@@ -63,7 +63,9 @@ const PlayerInfo: React.FC<BoardProps> = ({
   }, [countAdvantage, game, interval, player, startGame, startTimeDate]);
 
   useEffect(() => {
-    if (time <= 0) {
+    if (time <= 0 || game.isGameOver()) {
+      setTime(Math.max(0, time));
+      game.timers[player.color] = 0;
       game.setWinner();
       setEndGameModal(true);
       clearInterval(intervalId);
