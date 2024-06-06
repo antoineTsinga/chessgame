@@ -58,6 +58,7 @@ export default class Game {
   }
 
   isGameOver(): boolean {
+    if (this.winner) return true;
     this.setWinner();
     return (
       this.isCheckMat(this.player1) ||
@@ -517,6 +518,17 @@ export default class Game {
       ];
     if (from.piece?.code === "K") {
       //check if there is no danger for the king to move to the cell "to"
+      const isCastle = Math.abs(from.column - to.column) === 2;
+
+      if (
+        isCastle &&
+        !this.kingIsSafeWhenPieceMoveFromTo(
+          from,
+          this.board[to.row][(to.column + from.column) / 2]
+        )
+      ) {
+        return false;
+      }
       return (
         this.noQueenOrBishopTargetingThisCellForKing(to, from, to) &&
         this.noQueenOrRookTargetingThisCellForKing(to, from, to) &&
