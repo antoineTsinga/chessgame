@@ -31,10 +31,17 @@
 
 }
 
-.item-piece{
-    width: 30px;
+.item-piece-container{
     position: relative;
-    
+    width: 0;
+    /* border: 1px solid black; */
+}
+
+.item-piece{
+    position: relative;
+    width: 1.5rem;
+    /* border: 1px solid black; */
+    margin-left: -1rem;
 }
 
 .timer{
@@ -58,35 +65,30 @@
 .relative{
     display: flex;
     flex-direction: row;
-    margin-right: 20px;
+    /* padding-right: 6%; */
+    /* border: 1px solid black; */
+    width:fit-content;
 }
 
 
-.pawn{
-    display: grid;
-    grid-template-columns: repeat(8, 10px);
-
-}
-
-.knight{
-    display: grid;
-    grid-template-columns: repeat(2, 10px);
-
-}
 
 
-.bishop{
-    display: grid;
-    grid-template-columns: repeat(2, 10px);
 
-}
 
-.rook{
-    display: grid;
-    grid-template-columns: repeat(2, 10px);
-
-}
-
-.pieces span{
-    margin-left: -20px;
+@media screen and (max-width: 700px){
+    .item-piece{
+        position: relative;
+        width: 1.2rem;
+        /* border: 1px solid black; */
+        margin-left: -0.9rem;
+    }
+    
+    .pieces span{
+        font-size: 13px;
+    }
+    
+    .timer{
+        width: 80px;
+    }
+    
 }

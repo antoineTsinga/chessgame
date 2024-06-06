@@ -15,6 +15,7 @@ import {
 } from "../../core/icons/icons.jsx";
 import SoundComponent from "../../core/sounds/SoundComponent.jsx";
 import SoundManager from "../../core/sounds/SoundManager.jsx";
+import { ImagesLoader } from "../../core/config/ImagesLoader.ts";
 
 export interface GameProps {
   playerName: string;
@@ -23,6 +24,7 @@ export interface GameProps {
   closeSocket: (code?: number | undefined, reason?: string | undefined) => void;
   roomId: string;
 }
+const imageLoader = ImagesLoader.instance;
 const WebSocketComponent: React.FC<GameProps> = ({
   playerName,
   isHost,

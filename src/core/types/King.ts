@@ -56,7 +56,7 @@ export default class King implements IPiece {
     if (!this.isFirstMove) return [];
 
     const possibleMoves: Cell[] = [];
-    const directions = [-2, 2]; // two move possible bigrook and small rook
+    const directions = [-2, 2]; // two move possible big castle and small castle
 
     for (const dx of directions) {
       const direction = Math.abs(dx) / dx; // Direction of movement

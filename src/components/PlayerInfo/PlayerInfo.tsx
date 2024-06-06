@@ -88,18 +88,25 @@ const PlayerInfo: React.FC<BoardProps> = ({
 
   const printPiece = (code: string) => {
     //add taken pieces
-    let leftpixels = 0;
+    let leftpixels = 1;
     return game.takenPieces[colortakenPieces]
       .filter((piece) => piece.code === code && piece.color !== player.color)
       .map((piece, index) => {
         leftpixels -= 0;
+        const n =
+          game.takenPieces[colortakenPieces].filter(
+            (piece) => piece.code === code && piece.color !== player.color
+          ).length - 1;
         return (
           <img
             key={index}
             className="item-piece"
             src={imageLoader.getImageByClass(piece)}
             alt={piece.name}
-            style={{ left: leftpixels + "px" }}
+            style={{
+              left: leftpixels + "rem",
+              marginRight: index === n ? "20px" : 0,
+            }}
           />
         );
       });
