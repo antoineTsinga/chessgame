@@ -20,7 +20,7 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
   const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]);
   const [moveMade, setMoveMade] = useState<Cell[]>([]);
   const [promotionModale, setPromotionModale] = useState<boolean>(false);
-
+  const [inPiece, setInPiece] = useState(null);
   const handleClick = (cell: Cell) => {
     if (promotionModale) return;
     if (game.isGameOver()) return;
@@ -100,15 +100,21 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
     e.preventDefault();
   };
   const handleDragEnter = (e, cell: Cell) => {
-    let element = e.target.classList.contains("piece")
+    e.stopPropagation();
+    e.preventDefault();
+    let element = !e.target.classList.contains("cell")
       ? e.target.parentElement
       : e.target;
     if (!cell.isEmpty && cell.piece?.color === prevCell?.piece?.color) return;
-    element.style.border = "1px solid rgb(222, 240, 85)";
-  };
-  const handleDragLeave = (e) => {
-    let element = e.target;
-    element.style.border = "unset";
+
+    if (inPiece == null) {
+      element.style.border = "4px solid rgb(211, 212, 201)";
+      setInPiece(element);
+    } else if (element !== inPiece) {
+      inPiece.style.border = "unset";
+      element.style.border = "4px solid rgb(211, 212, 201)";
+      setInPiece(element);
+    }
   };
 
   return (
@@ -123,7 +129,6 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
               } ${cell.color} `}
               onClick={() => handleClick(cell)}
               onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
               onDragEnter={(e) => handleDragEnter(e, cell)}
               onDrop={(e) => handleDrop(e, cell)}
             >
