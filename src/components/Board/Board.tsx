@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from "react";
-import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
-import Modal from "../Modal/Modal.tsx";
 import Cell from "../../core/types/Cell.ts";
 import Game from "../../core/config/Game.ts";
 import { makeMove, showPosibleMove } from "../../core/config/utils.ts";
-import "./Board.css";
 import { Move } from "../../core/types/Type.ts";
-import LoadingDot from "../../core/icons/LoadingDot.jsx";
+import "./Board.css";
+import { ImagesLoader } from "../../core/config/ImagesLoader.ts";
 
 export interface BoardProps {
   game: Game;
   setMove: React.Dispatch<React.SetStateAction<Move | null>>;
   startGame: boolean;
 }
+
+const imageLoader = ImagesLoader.instance;
 
 const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
   const [current, setCurrent] = useState<Cell | null>(null);
@@ -99,7 +99,7 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
                   className={`piece ${
                     game.player1.color === "black" && " reverse"
                   }`}
-                  src={cell.piece?.img}
+                  src={imageLoader.getImageByClass(cell.piece)}
                   alt={cell.piece?.name}
                 />
               )}
@@ -117,25 +117,25 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
           <div className="promotion">
             <img
               className="piece"
-              src={`/images/pions/N${game.whoPlay.color.charAt(0)}.png`}
+              src={imageLoader.getImageByName(`${game.whoPlay.color}_knight`)}
               alt={"Knight"}
               onClick={() => setPromotionCall(game.toPromote, "N")}
             />
             <img
               className="piece"
-              src={`/images/pions/B${game.whoPlay.color.charAt(0)}.png`}
+              src={imageLoader.getImageByName(`${game.whoPlay.color}_bishop`)}
               alt={"Bishop"}
               onClick={() => setPromotionCall(game.toPromote, "B")}
             />
             <img
               className="piece"
-              src={`/images/pions/R${game.whoPlay.color.charAt(0)}.png`}
+              src={imageLoader.getImageByName(`${game.whoPlay.color}_rook`)}
               alt={"Rook"}
               onClick={() => setPromotionCall(game.toPromote, "R")}
             />
             <img
               className="piece"
-              src={`/images/pions/Q${game.whoPlay.color.charAt(0)}.png`}
+              src={imageLoader.getImageByName(`${game.whoPlay.color}_queen`)}
               alt={"Queen"}
               onClick={() => setPromotionCall(game.toPromote, "Q")}
             />

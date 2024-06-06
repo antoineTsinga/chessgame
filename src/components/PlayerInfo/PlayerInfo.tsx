@@ -4,6 +4,7 @@ import Player from "../../core/types/Player";
 import { Color } from "../../core/types/Type";
 import "./PlayerInfo.css";
 import { Clock } from "../../core/icons/icons";
+import { ImagesLoader } from "../../core/config/ImagesLoader.ts";
 
 export interface BoardProps {
   game: Game;
@@ -12,7 +13,7 @@ export interface BoardProps {
   startGame: boolean;
   startTimeDate: number;
 }
-
+const imageLoader = ImagesLoader.instance;
 const PlayerInfo: React.FC<BoardProps> = ({
   game,
   player,
@@ -96,7 +97,7 @@ const PlayerInfo: React.FC<BoardProps> = ({
           <img
             key={index}
             className="item-piece"
-            src={piece.img}
+            src={imageLoader.getImageByClass(piece)}
             alt={piece.name}
             style={{ left: leftpixels + "px" }}
           />
