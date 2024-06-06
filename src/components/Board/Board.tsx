@@ -81,6 +81,36 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
     return cell === from || cell === to;
   };
 
+  const handleDragStart = (element, cell) => {
+    setPrevCell(cell);
+    setTimeout(() => {
+      element.target.style.display = "none";
+    }, 0);
+  };
+  const handleDragEnd = (element) => {
+    element.target.style.display = "block";
+  };
+
+  const handleDrop = (e, cell: Cell) => {
+    e.target.style.border = "unset";
+    handleClick(cell);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+  const handleDragEnter = (e, cell: Cell) => {
+    let element = e.target.classList.contains("piece")
+      ? e.target.parentElement
+      : e.target;
+    if (!cell.isEmpty && cell.piece?.color === prevCell?.piece?.color) return;
+    element.style.border = "1px solid rgb(222, 240, 85)";
+  };
+  const handleDragLeave = (e) => {
+    let element = e.target;
+    element.style.border = "unset";
+  };
+
   return (
     <div className="container">
       <div className={`board ${game.player1.color === "black" && "reverse"}`}>
@@ -92,10 +122,17 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
                 isMoveInMade(cell) && cell.color + "-move-made"
               } ${cell.color} `}
               onClick={() => handleClick(cell)}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDragEnter={(e) => handleDragEnter(e, cell)}
+              onDrop={(e) => handleDrop(e, cell)}
             >
               <div />
               {!cell.isEmpty && (
                 <img
+                  draggable={true}
+                  onDragStart={(e) => handleDragStart(e, cell)}
+                  onDragEnd={handleDragEnd}
                   className={`piece ${
                     game.player1.color === "black" && " reverse"
                   }`}

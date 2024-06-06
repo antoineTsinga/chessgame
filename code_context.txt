@@ -31,23 +31,27 @@ export default App;
 .container {
   position: relative;
   margin: auto;
-  /* background-color: #f5f5f5; */
+  /* background-color: #666; */
   max-width: 1200px;
-  height: 100%;
-  aspect-ratio: 1;
-  display: flex;
+
+
+  
 }
 
 .board {
+  /* aspect-ratio: 1; */
+  aspect-ratio: 1;
+  width: 100%;
   margin: auto;
   max-width: 700px;
   max-height: 700px;
-  width: 100%;
-  height: 100%;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
-
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
   /* border: 1px solid #666; */
 }
 
@@ -67,6 +71,10 @@ export default App;
   /* border: 1px solid #769656; */
   cursor: pointer;
   position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 
@@ -157,28 +165,23 @@ export default App;
 }
 
 
-@media screen and (max-width: 700px){
-  .container {
-    margin: 0;
-    padding: 0;
-  }
-}
+
 // File: src/components/Board/Board.tsx
 import React, { useEffect, useState } from "react";
-import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
-import Modal from "../Modal/Modal.tsx";
 import Cell from "../../core/types/Cell.ts";
 import Game from "../../core/config/Game.ts";
 import { makeMove, showPosibleMove } from "../../core/config/utils.ts";
-import "./Board.css";
 import { Move } from "../../core/types/Type.ts";
-import LoadingDot from "../../core/icons/LoadingDot.jsx";
+import "./Board.css";
+import { ImagesLoader } from "../../core/config/ImagesLoader.ts";
 
 export interface BoardProps {
   game: Game;
   setMove: React.Dispatch<React.SetStateAction<Move | null>>;
   startGame: boolean;
 }
+
+const imageLoader = ImagesLoader.instance;
 
 const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
   const [current, setCurrent] = useState<Cell | null>(null);
@@ -213,15 +216,15 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
   useEffect(() => {}, [promotionModale]);
 
   useEffect(() => {
-    const lastMove = game.historyMove[game.historyMove.length - 1];
+    const lastMove = game.currentState;
 
-    if (lastMove) {
+    if (lastMove && lastMove.currentMove) {
       setMoveMade([
-        game.board[lastMove[0].row][lastMove[0].column],
-        game.board[lastMove[1].row][lastMove[1].column],
+        game.board[lastMove.currentMove[0].row][lastMove.currentMove[0].column],
+        game.board[lastMove.currentMove[1].row][lastMove.currentMove[1].column],
       ]);
     }
-  }, [game, game.whoPlay]);
+  }, [game, game.currentState]);
 
   const setPromotionCall = (cell: Cell | null, code: string) => {
     if (prevCell === null || cell === null) return;
@@ -265,7 +268,7 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
                   className={`piece ${
                     game.player1.color === "black" && " reverse"
                   }`}
-                  src={cell.piece?.img}
+                  src={imageLoader.getImageByClass(cell.piece)}
                   alt={cell.piece?.name}
                 />
               )}
@@ -283,25 +286,25 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
           <div className="promotion">
             <img
               className="piece"
-              src={`/images/pions/N${game.whoPlay.color.charAt(0)}.png`}
+              src={imageLoader.getImageByName(`${game.whoPlay.color}_knight`)}
               alt={"Knight"}
               onClick={() => setPromotionCall(game.toPromote, "N")}
             />
             <img
               className="piece"
-              src={`/images/pions/B${game.whoPlay.color.charAt(0)}.png`}
+              src={imageLoader.getImageByName(`${game.whoPlay.color}_bishop`)}
               alt={"Bishop"}
               onClick={() => setPromotionCall(game.toPromote, "B")}
             />
             <img
               className="piece"
-              src={`/images/pions/R${game.whoPlay.color.charAt(0)}.png`}
+              src={imageLoader.getImageByName(`${game.whoPlay.color}_rook`)}
               alt={"Rook"}
               onClick={() => setPromotionCall(game.toPromote, "R")}
             />
             <img
               className="piece"
-              src={`/images/pions/Q${game.whoPlay.color.charAt(0)}.png`}
+              src={imageLoader.getImageByName(`${game.whoPlay.color}_queen`)}
               alt={"Queen"}
               onClick={() => setPromotionCall(game.toPromote, "Q")}
             />
@@ -318,9 +321,12 @@ export default Board;
 
 // File: src/components/Game/WebSocketComponent.css
 .game-view{
-    /* height: 100vh; */
+    min-height: 100vh;
     /* border: 1px solid white; */
     display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
     /* overflow: scroll; */
 
 }
@@ -330,7 +336,8 @@ export default Board;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px
+    padding: 20px;
+    /* border: 1px solid white; */
 }
 .game-code{
     font-size: 23px;
@@ -343,7 +350,8 @@ export default Board;
 
 .game-board-container{
     position: relative;
-    flex: 1;
+    margin: 20px;
+    /* border: 1px solid white; */
     /* margin-top: 20px; */
 }
 
@@ -354,8 +362,10 @@ export default Board;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    max-height: 98vh;
-    border: 1px solid white;
+    height: fit-content;
+    min-width: 350px;
+    max-width: 600px;
+    /* border: 1px solid white; */
     
 }
 .copy-btn{
@@ -368,26 +378,53 @@ export default Board;
     color:#81A64C
 }
 
+.menu{
+    display: flex;
+    padding: 10px;
+    background-color: black;
+}
+
+
+.icon-bar-menu{
+    width: 30px;
+    cursor: pointer;
+    margin-right: 10px;
+}
 @media screen and (max-width: 700px){
     .game-view{
         flex-direction: column;
         margin: auto;
     }
+
+    .game-board-container{
+        position: relative;
+        margin: 20px;
+        /* border: 1px solid white; */
+        width: 100%;
+        /* margin-top: 20px; */
+    }
+    
     
 }
 // File: src/components/Game/WebSocketComponent.tsx
 import React, { useEffect, useState } from "react";
 import Game from "../../core/config/Game.ts";
 import Board from "../Board/Board.tsx";
-import { Color, Move, ReMatch } from "../../core/types/Type.ts";
+import { Color, Move, NodeMove, ReMatch } from "../../core/types/Type.ts";
 import Player from "../../core/types/Player.ts";
 import "./WebSocketComponent.css";
 import Modal from "../Modal/Modal.tsx";
 import LoadingDot from "../../core/icons/LoadingDot.jsx";
 import PlayerInfo from "../PlayerInfo/PlayerInfo.tsx";
-import { GravityUiCopy } from "../../core/icons/icons.jsx";
+import {
+  GravityUiBars,
+  GravityUiChevronLeft,
+  GravityUiChevronRight,
+  GravityUiCopy,
+} from "../../core/icons/icons.jsx";
 import SoundComponent from "../../core/sounds/SoundComponent.jsx";
 import SoundManager from "../../core/sounds/SoundManager.jsx";
+import { ImagesLoader } from "../../core/config/ImagesLoader.ts";
 
 export interface GameProps {
   playerName: string;
@@ -396,6 +433,7 @@ export interface GameProps {
   closeSocket: (code?: number | undefined, reason?: string | undefined) => void;
   roomId: string;
 }
+const imageLoader = ImagesLoader.instance;
 const WebSocketComponent: React.FC<GameProps> = ({
   playerName,
   isHost,
@@ -408,6 +446,7 @@ const WebSocketComponent: React.FC<GameProps> = ({
   const [fen, setFen] = useState("");
   const [move, setMove] = useState<Move | null>(null);
   const [startGame, setStartGame] = useState<boolean>(false);
+  const [endGame, setEndGame] = useState<boolean>(false);
   const [endGameModal, setEndGameModal] = useState<boolean>(false);
   const [rematch, setRematch] = useState<ReMatch | null>(null); // define if there is a pendding rematch request
   const [timeLeftTo, setTimeLeftTo] = useState<number>(0);
@@ -463,7 +502,7 @@ const WebSocketComponent: React.FC<GameProps> = ({
       setTimeLeftTo(data.content.startTime);
       const gameTime = data.content.time;
       chess.timers = { black: gameTime, white: gameTime };
-      setEndGameModal(false);
+      setEndGame(false);
       setStartGame(true);
     } else if (data.type === "rematch") {
       // Messge send to reset the game and send start request
@@ -561,9 +600,13 @@ const WebSocketComponent: React.FC<GameProps> = ({
 
   useEffect(() => {
     if (chess && chess.isGameOver()) {
-      setEndGameModal(true);
+      setEndGame(true);
     }
   }, [chess, chess?.whoPlay]);
+
+  useEffect(() => {
+    setEndGameModal(endGame);
+  }, [endGame]);
 
   useEffect(() => {
     if (soundType) {
@@ -574,6 +617,15 @@ const WebSocketComponent: React.FC<GameProps> = ({
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
+  };
+
+  const applyMoveNode = (moveNode: NodeMove | null) => {
+    if (!chess || moveNode == null || moveNode.state == null) return;
+    const from = moveNode.state[0];
+    const to = moveNode.state[1];
+    chess.board[from.row][from.column] = from;
+    chess.board[to.row][to.column] = to;
+    setSoundType(moveNode.type);
   };
 
   return (
@@ -596,85 +648,113 @@ const WebSocketComponent: React.FC<GameProps> = ({
               startGame={startGame}
               game={chess}
               player={chess.player2}
-              setEndGameModal={setEndGameModal}
+              setEndGame={setEndGame}
               startTimeDate={chess.isTurn(chess.player2) ? timeLeftTo : 0}
             />
             <Board game={chess} setMove={setMove} startGame={startGame} />
             <PlayerInfo
               game={chess}
               player={chess.player1}
-              setEndGameModal={setEndGameModal}
+              setEndGame={setEndGame}
               startGame={startGame}
               startTimeDate={chess.isTurn(chess.player1) ? timeLeftTo : 0}
             />
+            <div className="menu">
+              <GravityUiBars
+                className="icon-bar-menu"
+                onClick={() => setEndGameModal(true)}
+              />
+              {endGame ? (
+                <GravityUiChevronLeft
+                  className="icon-bar-menu"
+                  onClick={() => applyMoveNode(chess.prevState())}
+                />
+              ) : (
+                <></>
+              )}
+              {endGame ? (
+                <GravityUiChevronRight
+                  className="icon-bar-menu"
+                  onClick={() => applyMoveNode(chess.nextState())}
+                />
+              ) : (
+                <></>
+              )}
+            </div>
           </div>
           {endGameModal ? (
-            <Modal
-              title={
-                chess.getWinner()
-                  ? `${chess.getWinner()?.color} win`
-                  : "It's a draw"
-              }
-              onclick={setEndGameModal}
-            >
-              {chess.winner === null ? (
-                <div className="win">🫱🏿‍🫲🏻</div>
-              ) : chess.winner === chess.player1 ? (
-                <div className="win">🎉</div>
-              ) : (
-                <div className="win">😭</div>
-              )}
+            <>
+              <Modal
+                title={
+                  endGame
+                    ? chess.getWinner()
+                      ? `${chess.getWinner()?.color} win`
+                      : "It's a draw"
+                    : "Options"
+                }
+                onclick={setEndGameModal}
+              >
+                {chess.winner === null && endGame ? (
+                  <div className="win">🫱🏿‍🫲🏻</div>
+                ) : chess.winner === chess.player1 ? (
+                  <div className="win">🎉</div>
+                ) : chess.winner === chess.player2 ? (
+                  <div className="win">😭</div>
+                ) : (
+                  <></>
+                )}
 
-              {rematch?.request ? (
-                rematch?.requester !== chess.player1.color ? (
+                {rematch?.request ? (
+                  rematch?.requester !== chess.player1.color ? (
+                    <button
+                      className="btn"
+                      type="button"
+                      onClick={() => {
+                        const req: ReMatch = {
+                          request: true,
+                          requester: chess.whoPlay.color,
+                          response: true,
+                        };
+                        sendRematch(req);
+                      }}
+                      style={{ marginTop: "1rem" }}
+                    >
+                      Accept Rematch
+                    </button>
+                  ) : (
+                    <button className="btn" type="button">
+                      <LoadingDot width={"40px"} />
+                    </button>
+                  )
+                ) : (
                   <button
                     className="btn"
                     type="button"
                     onClick={() => {
                       const req: ReMatch = {
                         request: true,
-                        requester: chess.whoPlay.color,
-                        response: true,
+                        requester: chess.player1.color,
+                        response: false,
                       };
                       sendRematch(req);
                     }}
                     style={{ marginTop: "1rem" }}
                   >
-                    Accept Rematch
+                    Rematch
                   </button>
-                ) : (
-                  <button className="btn" type="button">
-                    <LoadingDot width={"40px"} />
-                  </button>
-                )
-              ) : (
+                )}
                 <button
                   className="btn"
                   type="button"
                   onClick={() => {
-                    const req: ReMatch = {
-                      request: true,
-                      requester: chess.player1.color,
-                      response: false,
-                    };
-                    sendRematch(req);
+                    closeSocket();
                   }}
                   style={{ marginTop: "1rem" }}
                 >
-                  Rematch
+                  Home
                 </button>
-              )}
-              <button
-                className="btn"
-                type="button"
-                onClick={() => {
-                  closeSocket();
-                }}
-                style={{ marginTop: "1rem" }}
-              >
-                Home
-              </button>
-            </Modal>
+              </Modal>
+            </>
           ) : (
             <></>
           )}
@@ -1146,6 +1226,11 @@ export default function Modal({ title, onclick, children }) {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    max-width: 900px;
+    user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 .avater{
     width: 50px;
@@ -1170,9 +1255,17 @@ export default function Modal({ title, onclick, children }) {
 
 }
 
-.item-piece{
-    width: 30px;
+.item-piece-container{
     position: relative;
+    width: 0;
+    /* border: 1px solid black; */
+}
+
+.item-piece{
+    position: relative;
+    width: 1.5rem;
+    /* border: 1px solid black; */
+    margin-left: -1rem;
 }
 
 .timer{
@@ -1194,12 +1287,35 @@ export default function Modal({ title, onclick, children }) {
 }
 
 .relative{
-    max-width: 100px;
     display: flex;
     flex-direction: row;
+    /* padding-right: 6%; */
+    /* border: 1px solid black; */
+    width:fit-content;
 }
 
 
+
+
+
+
+@media screen and (max-width: 700px){
+    .item-piece{
+        position: relative;
+        width: 1.2rem;
+        /* border: 1px solid black; */
+        margin-left: -0.9rem;
+    }
+    
+    .pieces span{
+        font-size: 13px;
+    }
+    
+    .timer{
+        width: 80px;
+    }
+    
+}
 // File: src/components/PlayerInfo/PlayerInfo.tsx
 import React, { useCallback, useEffect, useState } from "react";
 import Game from "../../core/config/Game";
@@ -1207,19 +1323,20 @@ import Player from "../../core/types/Player";
 import { Color } from "../../core/types/Type";
 import "./PlayerInfo.css";
 import { Clock } from "../../core/icons/icons";
+import { ImagesLoader } from "../../core/config/ImagesLoader.ts";
 
 export interface BoardProps {
   game: Game;
   player: Player;
-  setEndGameModal: React.Dispatch<boolean>;
+  setEndGame: React.Dispatch<boolean>;
   startGame: boolean;
   startTimeDate: number;
 }
-
+const imageLoader = ImagesLoader.instance;
 const PlayerInfo: React.FC<BoardProps> = ({
   game,
   player,
-  setEndGameModal,
+  setEndGame,
   startGame, // if the as start
   startTimeDate, // The date from which we start counting the time elapsed by the player
 }) => {
@@ -1271,7 +1388,7 @@ const PlayerInfo: React.FC<BoardProps> = ({
       game.timers[player.color] = 0;
       game.setWinner();
       setActive(false);
-      setEndGameModal(true);
+      setEndGame(true);
       clearInterval(intervalId);
     }
   }, [game, time]);
@@ -1289,18 +1406,26 @@ const PlayerInfo: React.FC<BoardProps> = ({
   };
 
   const printPiece = (code: string) => {
-    let leftpixels = 20;
+    //add taken pieces
+    let leftpixels = 1;
     return game.takenPieces[colortakenPieces]
       .filter((piece) => piece.code === code && piece.color !== player.color)
       .map((piece, index) => {
-        leftpixels -= 20;
+        leftpixels -= 0;
+        const n =
+          game.takenPieces[colortakenPieces].filter(
+            (piece) => piece.code === code && piece.color !== player.color
+          ).length - 1;
         return (
           <img
             key={index}
             className="item-piece"
-            src={piece.img}
-            style={{ left: leftpixels + "px" }}
+            src={imageLoader.getImageByClass(piece)}
             alt={piece.name}
+            style={{
+              left: leftpixels + "rem",
+              marginRight: index === n ? "20px" : 0,
+            }}
           />
         );
       });
@@ -1340,7 +1465,7 @@ const backendWebSocketUrl = process.env.REACT_APP_BACKEND_WEBSOCKET_URL;
 export { backendUrl, backendWebSocketUrl };
 
 // File: src/core/config/Game.ts
-import { BoardType, Color, Move } from "../types/Type";
+import { BoardType, Color, Move, MoveType, NodeMove } from "../types/Type.ts";
 import Player from "../types/Player.ts";
 import { createBoard } from "./initialBoard.ts";
 import IPiece from "../types/IPiece.ts";
@@ -1353,10 +1478,14 @@ export default class Game {
   hostCode: string;
   board: BoardType;
   history: string[] = [];
-  historyMove: Cell[][] = [];
+  historyMove: { start: NodeMove; end: NodeMove } = {
+    start: new NodeMove(),
+    end: new NodeMove(),
+  };
+  currentState: NodeMove;
   isGameStart: boolean = false;
   winner: Player | null = null;
-  turn: number = 1;
+  turn: number = 0;
   whoPlay: Player;
   toPromote: Cell | null = null;
   LastFiftyMoveWithoutTake: number[] = [];
@@ -1396,6 +1525,7 @@ export default class Game {
   }
 
   isGameOver(): boolean {
+    if (this.winner) return true;
     this.setWinner();
     return (
       this.isCheckMat(this.player1) ||
@@ -1430,7 +1560,8 @@ export default class Game {
     }
     this.board = createBoard();
     this.history = [];
-    this.historyMove = [];
+    this.historyMove = { start: new NodeMove(), end: new NodeMove() };
+    this.currentState = new NodeMove();
     this.isGameStart = false;
     this.winner = null;
     this.turn = 1;
@@ -1509,6 +1640,23 @@ export default class Game {
     return (
       this.noPieceCanMove(this.player1) || this.noPieceCanMove(this.player2)
     );
+  }
+
+  prevState(): NodeMove | null {
+    if (!this.isGameOver()) return null;
+    const res = this.currentState.prevState;
+    if (!res || !res.state) return null;
+    this.currentState = res;
+    return res;
+  }
+
+  nextState(): NodeMove | null {
+    if (!this.isGameOver()) return null;
+    const res = this.currentState.nextState;
+
+    if (!res || !res.state) return null;
+    this.currentState = res;
+    return res;
   }
 
   notEnougthMaterial(): boolean {
@@ -1662,8 +1810,6 @@ export default class Game {
 
     to.piece && this.takenPieces[to.piece.color].push(to.piece); // add in stack when taken pieces
 
-    this.historyMove.push([this.copyInstance(from), this.copyInstance(to)]);
-
     if (from.piece.code === "P") {
       this.makePawnMove(from, to, promotion);
     } else if (
@@ -1747,21 +1893,51 @@ export default class Game {
 
     const isCapture = !toCell.isEmpty;
 
-    if (this.movePieceFromCellTo(fromCell, toCell, promotion)) {
+    let type = MoveType.WRONG;
+
+    const initState = [this.copyInstance(fromCell), this.copyInstance(toCell)];
+
+    const res = this.movePieceFromCellTo(fromCell, toCell, promotion); // this methode will change fromCell and to Cell
+
+    if (res) {
       if (this.isInCheck(this.whoPlay)) {
-        return "check";
+        type = MoveType.CHECK;
       } else if (isCastle) {
-        return "castle";
+        type = MoveType.CASTLE;
       } else if (promotion) {
-        return "promote";
+        type = MoveType.PROMOTE;
       } else if (!isCapture) {
-        return "move";
+        type = MoveType.MOVE;
       } else if (isCapture) {
-        return "capture";
+        type = MoveType.CAPTURE;
       }
     }
 
-    return "wrong";
+    if (type !== MoveType.WRONG && res) {
+      const start = new NodeMove();
+      const end = new NodeMove();
+
+      start.state = initState;
+      start.nextState = end;
+      start.type = this.historyMove.end.type;
+      start.prevState = this.historyMove.start;
+      start.currentMove = this.historyMove.end.currentMove;
+
+      end.state = [this.copyInstance(fromCell), this.copyInstance(toCell)];
+      end.type = type;
+      end.prevState = start;
+      end.currentMove = [
+        this.copyInstance(fromCell),
+        this.copyInstance(toCell),
+      ];
+
+      this.historyMove.end.nextState = end;
+
+      this.historyMove = { start: start, end: end };
+      this.currentState = end;
+    }
+
+    return type;
   }
 
   getImage = (type: string, colorChar0: string) =>
@@ -1809,6 +1985,17 @@ export default class Game {
       ];
     if (from.piece?.code === "K") {
       //check if there is no danger for the king to move to the cell "to"
+      const isCastle = Math.abs(from.column - to.column) === 2;
+
+      if (
+        isCastle &&
+        !this.kingIsSafeWhenPieceMoveFromTo(
+          from,
+          this.board[to.row][(to.column + from.column) / 2]
+        )
+      ) {
+        return false;
+      }
       return (
         this.noQueenOrBishopTargetingThisCellForKing(to, from, to) &&
         this.noQueenOrRookTargetingThisCellForKing(to, from, to) &&
@@ -2180,6 +2367,66 @@ export default class Game {
   }
 }
 
+// File: src/core/config/ImagesLoader.ts
+// Importez les images
+import blackKing from "./pions/black_king.png";
+import blackQueen from "./pions/black_queen.png";
+import blackBishop from "./pions/black_bishop.png";
+import blackKnight from "./pions/black_knight.png";
+import blackRook from "./pions/black_rook.png";
+import blackPawn from "./pions/black_pawn.png";
+
+import whiteKing from "./pions/white_king.png";
+import whiteQueen from "./pions/white_queen.png";
+import whiteBishop from "./pions/white_bishop.png";
+import whiteKnight from "./pions/white_knight.png";
+import whiteRook from "./pions/white_rook.png";
+import whitePawn from "./pions/white_pawn.png";
+import IPiece from "../types/IPiece";
+
+export class ImagesLoader {
+  static #instance: ImagesLoader;
+  private images: { [key: string]: string } = {};
+
+  private constructor() {
+    this.loadImages();
+  }
+
+  public static get instance(): ImagesLoader {
+    if (!ImagesLoader.#instance) {
+      ImagesLoader.#instance = new ImagesLoader();
+    }
+    return ImagesLoader.#instance;
+  }
+
+  private loadImages(): void {
+    // Charger les images dans l'objet `images`
+    this.images["black_king"] = blackKing;
+    this.images["black_queen"] = blackQueen;
+    this.images["black_bishop"] = blackBishop;
+    this.images["black_knight"] = blackKnight;
+    this.images["black_rook"] = blackRook;
+    this.images["black_pawn"] = blackPawn;
+
+    this.images["white_king"] = whiteKing;
+    this.images["white_queen"] = whiteQueen;
+    this.images["white_bishop"] = whiteBishop;
+    this.images["white_knight"] = whiteKnight;
+    this.images["white_rook"] = whiteRook;
+    this.images["white_pawn"] = whitePawn;
+  }
+
+  public getImageByName(name: string): string | undefined {
+    return this.images[name];
+  }
+
+  public getImageByClass(piece: IPiece | null): string | undefined {
+    if (!piece) return undefined;
+    const name = `${piece.color}_${piece.name.toLocaleLowerCase()}`;
+    return this.images[name];
+  }
+}
+
 // File: src/core/config/initialBoard.ts
 
 import Cell  from "../types/Cell.ts";
@@ -2418,7 +2665,53 @@ const GravityUiCopy = (props) => {
   );
 };
 
-export { Clock, Close, LoadingDot, GravityUiCopy };
+const GravityUiBars = (props) => {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" {...props}>
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M1.25 3.25A.75.75 0 0 1 2 2.5h12A.75.75 0 0 1 14 4H2a.75.75 0 0 1-.75-.75m0 4.75A.75.75 0 0 1 2 7.25h12a.75.75 0 0 1 0 1.5H2A.75.75 0 0 1 1.25 8M2 12a.75.75 0 0 0 0 1.5h12a.75.75 0 0 0 0-1.5z"
+        clipRule="evenodd"
+      ></path>
+    </svg>
+  );
+};
+
+function GravityUiChevronRight(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" {...props}>
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M5.47 13.03a.75.75 0 0 1 0-1.06L9.44 8L5.47 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0"
+        clipRule="evenodd"
+      ></path>
+    </svg>
+  );
+}
+
+function GravityUiChevronLeft(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" {...props}>
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M10.53 2.97a.75.75 0 0 1 0 1.06L6.56 8l3.97 3.97a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 0"
+        clipRule="evenodd"
+      ></path>
+    </svg>
+  );
+}
+export {
+  Clock,
+  Close,
+  LoadingDot,
+  GravityUiCopy,
+  GravityUiBars,
+  GravityUiChevronRight,
+  GravityUiChevronLeft,
+};
 
 // File: src/core/icons/LoadingDot.jsx
 const LoadingDot = (props) => {
@@ -2838,7 +3131,7 @@ export default class King implements IPiece {
     if (!this.isFirstMove) return [];
 
     const possibleMoves: Cell[] = [];
-    const directions = [-2, 2]; // two move possible bigrook and small rook
+    const directions = [-2, 2]; // two move possible big castle and small castle
 
     for (const dx of directions) {
       const direction = Math.abs(dx) / dx; // Direction of movement
@@ -3196,6 +3489,23 @@ export type ReMatch = {
   requester: Color;
   response: boolean;
 };
+
+export enum MoveType {
+  MOVE = "move",
+  CASTLE = "castle",
+  CAPTURE = "capture",
+  PROMOTE = "promote",
+  CHECK = "check",
+  WRONG = "wrong",
+}
+
+export class NodeMove {
+  state: Cell[] | null = null;
+  prevState: NodeMove;
+  nextState: NodeMove;
+  type: MoveType = MoveType.MOVE;
+  currentMove: Cell[] | null = null;
+}
 
 // File: src/index.css
 body {
