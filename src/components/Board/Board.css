@@ -18,7 +18,10 @@
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
-
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
   /* border: 1px solid #666; */
 }
 
@@ -38,6 +41,10 @@
   /* border: 1px solid #769656; */
   cursor: pointer;
   position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 
