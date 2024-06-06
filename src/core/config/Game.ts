@@ -1,4 +1,4 @@
-import { BoardType, Color, Move } from "../types/Type";
+import { BoardType, Color, Move, MoveType, NodeMove } from "../types/Type.ts";
 import Player from "../types/Player.ts";
 import { createBoard } from "./initialBoard.ts";
 import IPiece from "../types/IPiece.ts";
@@ -11,10 +11,14 @@ export default class Game {
   hostCode: string;
   board: BoardType;
   history: string[] = [];
-  historyMove: Cell[][] = [];
+  historyMove: { start: NodeMove; end: NodeMove } = {
+    start: new NodeMove(),
+    end: new NodeMove(),
+  };
+  currentState: NodeMove;
   isGameStart: boolean = false;
   winner: Player | null = null;
-  turn: number = 1;
+  turn: number = 0;
   whoPlay: Player;
   toPromote: Cell | null = null;
   LastFiftyMoveWithoutTake: number[] = [];
@@ -88,7 +92,8 @@ export default class Game {
     }
     this.board = createBoard();
     this.history = [];
-    this.historyMove = [];
+    this.historyMove = { start: new NodeMove(), end: new NodeMove() };
+    this.currentState = new NodeMove();
     this.isGameStart = false;
     this.winner = null;
     this.turn = 1;
@@ -167,6 +172,23 @@ export default class Game {
     return (
       this.noPieceCanMove(this.player1) || this.noPieceCanMove(this.player2)
     );
+  }
+
+  prevState(): NodeMove | null {
+    if (!this.isGameOver()) return null;
+    const res = this.currentState.prevState;
+    if (!res || !res.state) return null;
+    this.currentState = res;
+    return res;
+  }
+
+  nextState(): NodeMove | null {
+    if (!this.isGameOver()) return null;
+    const res = this.currentState.nextState;
+
+    if (!res || !res.state) return null;
+    this.currentState = res;
+    return res;
   }
 
   notEnougthMaterial(): boolean {
@@ -320,8 +342,6 @@ export default class Game {
 
     to.piece && this.takenPieces[to.piece.color].push(to.piece); // add in stack when taken pieces
 
-    this.historyMove.push([this.copyInstance(from), this.copyInstance(to)]);
-
     if (from.piece.code === "P") {
       this.makePawnMove(from, to, promotion);
     } else if (
@@ -405,21 +425,51 @@ export default class Game {
 
     const isCapture = !toCell.isEmpty;
 
-    if (this.movePieceFromCellTo(fromCell, toCell, promotion)) {
+    let type = MoveType.WRONG;
+
+    const initState = [this.copyInstance(fromCell), this.copyInstance(toCell)];
+
+    const res = this.movePieceFromCellTo(fromCell, toCell, promotion); // this methode will change fromCell and to Cell
+
+    if (res) {
       if (this.isInCheck(this.whoPlay)) {
-        return "check";
+        type = MoveType.CHECK;
       } else if (isCastle) {
-        return "castle";
+        type = MoveType.CASTLE;
       } else if (promotion) {
-        return "promote";
+        type = MoveType.PROMOTE;
       } else if (!isCapture) {
-        return "move";
+        type = MoveType.MOVE;
       } else if (isCapture) {
-        return "capture";
+        type = MoveType.CAPTURE;
       }
     }
 
-    return "wrong";
+    if (type !== MoveType.WRONG && res) {
+      const start = new NodeMove();
+      const end = new NodeMove();
+
+      start.state = initState;
+      start.nextState = end;
+      start.type = this.historyMove.end.type;
+      start.prevState = this.historyMove.start;
+      start.currentMove = this.historyMove.end.currentMove;
+
+      end.state = [this.copyInstance(fromCell), this.copyInstance(toCell)];
+      end.type = type;
+      end.prevState = start;
+      end.currentMove = [
+        this.copyInstance(fromCell),
+        this.copyInstance(toCell),
+      ];
+
+      this.historyMove.end.nextState = end;
+
+      this.historyMove = { start: start, end: end };
+      this.currentState = end;
+    }
+
+    return type;
   }
 
   getImage = (type: string, colorChar0: string) =>

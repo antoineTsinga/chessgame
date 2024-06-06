@@ -34,6 +34,7 @@
 .item-piece{
     width: 30px;
     position: relative;
+    
 }
 
 .timer{
@@ -55,8 +56,37 @@
 }
 
 .relative{
-    max-width: 100px;
     display: flex;
     flex-direction: row;
+    margin-right: 20px;
 }
 
+
+.pawn{
+    display: grid;
+    grid-template-columns: repeat(8, 10px);
+
+}
+
+.knight{
+    display: grid;
+    grid-template-columns: repeat(2, 10px);
+
+}
+
+
+.bishop{
+    display: grid;
+    grid-template-columns: repeat(2, 10px);
+
+}
+
+.rook{
+    display: grid;
+    grid-template-columns: repeat(2, 10px);
+
+}
+
+.pieces span{
+    margin-left: -20px;
+}

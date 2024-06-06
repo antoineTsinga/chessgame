@@ -47,15 +47,15 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
   useEffect(() => {}, [promotionModale]);
 
   useEffect(() => {
-    const lastMove = game.historyMove[game.historyMove.length - 1];
+    const lastMove = game.currentState;
 
-    if (lastMove) {
+    if (lastMove && lastMove.currentMove) {
       setMoveMade([
-        game.board[lastMove[0].row][lastMove[0].column],
-        game.board[lastMove[1].row][lastMove[1].column],
+        game.board[lastMove.currentMove[0].row][lastMove.currentMove[0].column],
+        game.board[lastMove.currentMove[1].row][lastMove.currentMove[1].column],
       ]);
     }
-  }, [game, game.whoPlay]);
+  }, [game, game.currentState]);
 
   const setPromotionCall = (cell: Cell | null, code: string) => {
     if (prevCell === null || cell === null) return;

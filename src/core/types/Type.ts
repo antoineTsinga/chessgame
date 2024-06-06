@@ -21,3 +21,20 @@ export type ReMatch = {
   requester: Color;
   response: boolean;
 };
+
+export enum MoveType {
+  MOVE = "move",
+  CASTLE = "castle",
+  CAPTURE = "capture",
+  PROMOTE = "promote",
+  CHECK = "check",
+  WRONG = "wrong",
+}
+
+export class NodeMove {
+  state: Cell[] | null = null;
+  prevState: NodeMove;
+  nextState: NodeMove;
+  type: MoveType = MoveType.MOVE;
+  currentMove: Cell[] | null = null;
+}

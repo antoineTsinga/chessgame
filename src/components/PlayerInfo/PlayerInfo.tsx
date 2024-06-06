@@ -8,7 +8,7 @@ import { Clock } from "../../core/icons/icons";
 export interface BoardProps {
   game: Game;
   player: Player;
-  setEndGameModal: React.Dispatch<boolean>;
+  setEndGame: React.Dispatch<boolean>;
   startGame: boolean;
   startTimeDate: number;
 }
@@ -16,7 +16,7 @@ export interface BoardProps {
 const PlayerInfo: React.FC<BoardProps> = ({
   game,
   player,
-  setEndGameModal,
+  setEndGame,
   startGame, // if the as start
   startTimeDate, // The date from which we start counting the time elapsed by the player
 }) => {
@@ -68,7 +68,7 @@ const PlayerInfo: React.FC<BoardProps> = ({
       game.timers[player.color] = 0;
       game.setWinner();
       setActive(false);
-      setEndGameModal(true);
+      setEndGame(true);
       clearInterval(intervalId);
     }
   }, [game, time]);
@@ -86,18 +86,19 @@ const PlayerInfo: React.FC<BoardProps> = ({
   };
 
   const printPiece = (code: string) => {
-    let leftpixels = 20;
+    //add taken pieces
+    let leftpixels = 0;
     return game.takenPieces[colortakenPieces]
       .filter((piece) => piece.code === code && piece.color !== player.color)
       .map((piece, index) => {
-        leftpixels -= 20;
+        leftpixels -= 0;
         return (
           <img
             key={index}
             className="item-piece"
             src={piece.img}
-            style={{ left: leftpixels + "px" }}
             alt={piece.name}
+            style={{ left: leftpixels + "px" }}
           />
         );
       });
