@@ -111,7 +111,7 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
     return table
       .map((row) => row)
       .reverse()
-      .map((row) => row.reverse());
+      .map((row) => row.map((e) => e).reverse());
   }
   const sensors = useSensors(
     useSensor(TouchSensor, {}),
