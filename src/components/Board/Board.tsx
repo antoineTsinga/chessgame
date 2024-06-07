@@ -2,9 +2,20 @@ import React, { useEffect, useState } from "react";
 import Cell from "../../core/types/Cell.ts";
 import Game from "../../core/config/Game.ts";
 import { makeMove, showPosibleMove } from "../../core/config/utils.ts";
-import { Move } from "../../core/types/Type.ts";
+import { BoardType, Move } from "../../core/types/Type.ts";
 import "./Board.css";
 import { ImagesLoader } from "../../core/config/ImagesLoader.ts";
+import CellComponent from "./CellComponent.jsx";
+import {
+  DndContext,
+  MouseSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 
 export interface BoardProps {
   game: Game;
@@ -21,6 +32,8 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
   const [moveMade, setMoveMade] = useState<Cell[]>([]);
   const [promotionModale, setPromotionModale] = useState<boolean>(false);
   const [inPiece, setInPiece] = useState(null);
+  const [isOverCell, setIsOverCell] = useState<Cell | null>(null);
+  const [isDropped, setIsDropped] = useState(false);
   const handleClick = (cell: Cell) => {
     if (promotionModale) return;
     if (game.isGameOver()) return;
@@ -81,78 +94,72 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
     return cell === from || cell === to;
   };
 
-  const handleDragStart = (element, cell) => {
-    setPrevCell(cell);
-    setTimeout(() => {
-      element.target.style.display = "none";
-    }, 0);
-  };
   const handleDragEnd = (element) => {
-    element.target.style.display = "block";
-  };
-
-  const handleDrop = (e, cell: Cell) => {
-    e.target.style.border = "unset";
-    handleClick(cell);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-  const handleDragEnter = (e, cell: Cell) => {
-    e.stopPropagation();
-    e.preventDefault();
-    let element = !e.target.classList.contains("cell")
-      ? e.target.parentElement
-      : e.target;
-    if (!cell.isEmpty && cell.piece?.color === prevCell?.piece?.color) return;
-
-    if (inPiece == null) {
-      element.style.border = "4px solid rgb(211, 212, 201)";
-      setInPiece(element);
-    } else if (element !== inPiece) {
-      inPiece.style.border = "unset";
-      element.style.border = "4px solid rgb(211, 212, 201)";
-      setInPiece(element);
+    // console.log(element);
+    if (element.over) {
+      setIsDropped(true);
     }
   };
 
+  useEffect(() => {
+    if (isDropped && isOverCell) {
+      handleClick(isOverCell);
+    }
+    setIsDropped(false);
+  }, [isDropped]);
+  function reverseGrid(table: BoardType) {
+    return table
+      .map((row) => row)
+      .reverse()
+      .map((row) => row.reverse());
+  }
+  const sensors = useSensors(
+    useSensor(TouchSensor, {}),
+    useSensor(MouseSensor, {})
+  );
+
   return (
     <div className="container">
-      <div className={`board ${game.player1.color === "black" && "reverse"}`}>
-        {game.board.map((row, i) =>
-          row.map((cell, j) => (
-            <div
-              key={`${i}${j}`}
-              className={`cell ${
-                isMoveInMade(cell) && cell.color + "-move-made"
-              } ${cell.color} `}
-              onClick={() => handleClick(cell)}
-              onDragOver={handleDragOver}
-              onDragEnter={(e) => handleDragEnter(e, cell)}
-              onDrop={(e) => handleDrop(e, cell)}
-            >
-              <div />
-              {!cell.isEmpty && (
-                <img
-                  draggable={true}
-                  onDragStart={(e) => handleDragStart(e, cell)}
-                  onDragEnd={handleDragEnd}
-                  className={`piece ${
-                    game.player1.color === "black" && " reverse"
-                  }`}
-                  src={imageLoader.getImageByClass(cell.piece)}
-                  alt={cell.piece?.name}
-                />
+      <DndContext
+        modifiers={[restrictToWindowEdges]}
+        sensors={sensors}
+        onDragEnd={handleDragEnd}
+        collisionDetection={closestCenter}
+      >
+        <div className={`board`}>
+          {game.player1.color === "white"
+            ? game.board.map((row) =>
+                row.map((cell) => (
+                  <CellComponent
+                    key={`${cell.row}${cell.column}`}
+                    cell={cell}
+                    isMoveInMade={isMoveInMade}
+                    possibleMoves={possibleMoves}
+                    imageLoader={imageLoader}
+                    game={game}
+                    handleClick={handleClick}
+                    setIsOverCell={setIsOverCell}
+                    setPrevCell={setPrevCell}
+                  />
+                ))
+              )
+            : reverseGrid(game.board).map((row) =>
+                row.map((cell) => (
+                  <CellComponent
+                    key={`${cell.row}${cell.column}`}
+                    cell={cell}
+                    isMoveInMade={isMoveInMade}
+                    possibleMoves={possibleMoves}
+                    imageLoader={imageLoader}
+                    game={game}
+                    handleClick={handleClick}
+                    setIsOverCell={setIsOverCell}
+                    setPrevCell={setPrevCell}
+                  />
+                ))
               )}
-              <div
-                className={possibleMoves.includes(cell) ? "possible-moves" : ""}
-              ></div>
-            </div>
-          ))
-        )}
-      </div>
-
+        </div>
+      </DndContext>
       {promotionModale && game.toPromote ? (
         <>
           <div className="promotion-background"></div>

@@ -1,8 +1,10 @@
+import IDGenerator from "../config/IDGenerator.ts";
 import Cell from "./Cell";
 import IPiece from "./IPiece";
 import { BoardType, Color } from "./Type";
 
 export default class Queen implements IPiece {
+  id: number = IDGenerator.getInstance().generateId();
   color: Color;
   img: string;
   isFirstMove: boolean = true;

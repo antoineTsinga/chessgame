@@ -2,6 +2,7 @@ import Cell from "./Cell";
 import { BoardType, Color } from "./Type";
 
 export default interface IPiece {
+  id: number;
   color: Color;
   img: string;
   isFirstMove: boolean;
