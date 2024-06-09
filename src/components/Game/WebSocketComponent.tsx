@@ -4,6 +4,7 @@ import Board from "../Board/Board.tsx";
 import {
   BoardType,
   Color,
+  GameDTO,
   Move,
   NodeMove,
   ReMatch,
@@ -51,7 +52,7 @@ type IPieceDTO = {
 type CellDTO = {
   row: number;
   column: number;
-  piece: IPieceDTO;
+  piece: IPieceDTO | null;
   color: Color;
 };
 function createPieceFromModel(piece: IPieceDTO): IPiece {
@@ -87,6 +88,65 @@ const DTOtoCell = ({ row, column, piece, color }: CellDTO): Cell => {
   if (piece) cell.piece = createPieceFromModel(piece);
   return cell;
 };
+
+const getGameDTO = (game: Game): GameDTO => {
+  const t = {
+    player1: game.player1,
+    player2: game.player2,
+    hostCode: game.hostCode,
+    board: game.board.map((row) =>
+      row.map((c) => {
+        const cellDTO: CellDTO = {
+          row: c.row,
+          column: c.column,
+          piece: c.piece ? createPieceFromModel(c.piece) : null,
+          color: c.color,
+        };
+        return cellDTO;
+      })
+    ),
+    history: game.history,
+    isGameStart: game.isGameFinished,
+    isGameFinished: game.isGameFinished,
+    winner: game.winner,
+    turn: game.turn,
+    whoPlay: game.whoPlay,
+    toPromote: game.toPromote,
+    LastFiftyMoveWithoutTake: game.LastFiftyMoveWithoutTake,
+    numberFullMoves: game.numberFullMoves,
+    timers: game.timers,
+    startTimeDate: game.startTimeDate,
+    takenPieces: game.takenPieces,
+    kingPos: game.kingPos,
+  };
+  return t;
+};
+
+const DTOToGame = (gameDTO: GameDTO): Game => {
+  const game = new Game(gameDTO.player1.name, gameDTO.player1.color);
+
+  game.player2 = gameDTO.player2;
+  game.hostCode = gameDTO.hostCode;
+  game.board = gameDTO.board.map((row) =>
+    row.map((c: CellDTO) => DTOtoCell(c))
+  );
+  game.history = gameDTO.history;
+  game.isGameStart = gameDTO.isGameFinished;
+  game.isGameFinished = gameDTO.isGameFinished;
+  game.winner = gameDTO.winner;
+  game.turn = gameDTO.turn;
+  game.whoPlay = gameDTO.whoPlay;
+  game.toPromote = gameDTO.toPromote;
+  game.LastFiftyMoveWithoutTake = gameDTO.LastFiftyMoveWithoutTake;
+  game.numberFullMoves = gameDTO.numberFullMoves;
+  game.timers = gameDTO.timers;
+  game.startTimeDate = gameDTO.startTimeDate;
+  game.takenPieces = gameDTO.takenPieces;
+  game.kingPos = gameDTO.kingPos;
+
+  return game;
+};
+
 const WebSocketComponent: React.FC<GameProps> = ({
   playerName,
   isHost,
@@ -155,25 +215,15 @@ const WebSocketComponent: React.FC<GameProps> = ({
         setSoundType(moveMaked);
       }
     } else if (data.type === "findcolor") {
-      // console.log("findcolor");
       // Player who join game send findcolor message to know is color and the send a response
       if (isHost && chess && !chess.player2.name) {
-        // console.log("findcolor");
         const opponent = data.content;
         chess.player2.name = opponent.name;
         setColor(chess.player1, chess.player2);
         return;
       } else if (isHost && chess && chess.player2.name) {
         // Player who join game send findcolor message but there are already two players
-        // console.log("watchmatch");
-        sendWatchMatch({
-          player1: chess.player1,
-          player2: chess.player2,
-          board: chess.board.map((row) => row.map((cell) => cell)),
-          player1Play: chess.player1 === chess.whoPlay,
-          startTime: timeLeftTo,
-          timers: chess.timers,
-        });
+        sendWatchMatch(getGameDTO(chess));
       }
     } else if (data.type === "setcolor") {
       // The host send the color of it's opponent and set is name on game parameters
@@ -209,26 +259,10 @@ const WebSocketComponent: React.FC<GameProps> = ({
     } else if (data.type === "viewMatch") {
       // console.log("viewMatch");
       if (!chess || !chess.player2.name || !chess.player2.name) {
-        const {
-          player1,
-          player2,
-          board,
-          player1Play,
-          timers,
-          startTime,
-        }: ViewMatch = data.content;
-        const game = new Game(player1.name, player1.color);
-        game.player2 = player2;
-        game.board = board.map((row) =>
-          row.map((cellDTO: CellDTO) => DTOtoCell(cellDTO))
-        );
-        // console.log("timers", timers);
-        game.whoPlay = player1Play ? player1 : player2;
-        game.timers = timers;
+        const gameDTO: GameDTO = data.content;
+        const game = DTOToGame(gameDTO);
 
-        // console.log(game);
-        // setTimeLeftTo(timers[player1Play ? player1.color : player2.color]);
-        setTimeLeftTo(startTime);
+        setTimeLeftTo(gameDTO.startTimeDate);
         setChess(game);
         setIsWatching(true);
       }
@@ -299,7 +333,7 @@ const WebSocketComponent: React.FC<GameProps> = ({
     startTime: number;
     board;
   };
-  const sendWatchMatch = (viewMatch: ViewMatch) => {
+  const sendWatchMatch = (viewMatch: GameDTO) => {
     if (socket) {
       socket.send(
         JSON.stringify({

@@ -1,4 +1,11 @@
-import { BoardType, Color, Move, MoveType, NodeMove } from "../types/Type.ts";
+import {
+  BoardType,
+  Color,
+  GameDTO,
+  Move,
+  MoveType,
+  NodeMove,
+} from "../types/Type.ts";
 import Player from "../types/Player.ts";
 import { createBoard } from "./initialBoard.ts";
 import IPiece from "../types/IPiece.ts";
