@@ -51,8 +51,8 @@ export enum MoveType {
 
 export class NodeMove {
   state: Cell[] | null = null;
-  prevState: NodeMove;
-  nextState: NodeMove;
+  prevState: NodeMove | null = null;
+  nextState: NodeMove | null = null;
   type: MoveType = MoveType.MOVE;
   currentMove: Cell[] | null = null;
 }
@@ -63,6 +63,8 @@ export type GameDTO = {
   hostCode: string;
   board: BoardTypeDTO;
   history: string[];
+  currentState: string;
+  historyMove: string;
   isGameStart: boolean;
   isGameFinished: boolean;
   winner: Player | null;

@@ -9,7 +9,6 @@ import CellComponent from "./CellComponent.jsx";
 import {
   DndContext,
   MouseSensor,
-  PointerSensor,
   TouchSensor,
   closestCenter,
   useSensor,

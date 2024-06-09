@@ -30,6 +30,7 @@ import King from "../../core/types/King.ts";
 import Knight from "../../core/types/Knight.ts";
 import Rook from "../../core/types/Rook.ts";
 import Queen from "../../core/types/Queen.ts";
+import { parse, stringify } from "flatted";
 
 export interface GameProps {
   playerName: string;
@@ -55,7 +56,7 @@ type CellDTO = {
   piece: IPieceDTO | null;
   color: Color;
 };
-function createPieceFromModel(piece: IPieceDTO): IPiece {
+function createPieceFromModel(piece: IPieceDTO | IPiece): IPiece {
   let ipiece;
   switch (piece.code) {
     case "P":
@@ -105,6 +106,8 @@ const getGameDTO = (game: Game): GameDTO => {
         return cellDTO;
       })
     ),
+    currentState: stringify(game.currentState),
+    historyMove: stringify(game.historyMove),
     history: game.history,
     isGameStart: game.isGameFinished,
     isGameFinished: game.isGameFinished,
@@ -125,23 +128,38 @@ const getGameDTO = (game: Game): GameDTO => {
 const DTOToGame = (gameDTO: GameDTO): Game => {
   const game = new Game(gameDTO.player1.name, gameDTO.player1.color);
 
-  game.player2 = gameDTO.player2;
+  game.player2 = new Player();
+  game.player2.name = gameDTO.player2.name;
+  game.player2.color = gameDTO.player2.color;
   game.hostCode = gameDTO.hostCode;
   game.board = gameDTO.board.map((row) =>
     row.map((c: CellDTO) => DTOtoCell(c))
   );
+  console.log(parse(gameDTO.historyMove)["end"]);
   game.history = gameDTO.history;
+  game.currentState = parse(gameDTO.historyMove)["end"];
+  game.historyMove = parse(gameDTO.historyMove);
   game.isGameStart = gameDTO.isGameFinished;
   game.isGameFinished = gameDTO.isGameFinished;
-  game.winner = gameDTO.winner;
+  game.winner = gameDTO.winner
+    ? gameDTO.winner.color === gameDTO.player1.color
+      ? game.player1
+      : game.player2
+    : null;
   game.turn = gameDTO.turn;
-  game.whoPlay = gameDTO.whoPlay;
+  game.whoPlay =
+    gameDTO.whoPlay.color === gameDTO.player1.color
+      ? game.player1
+      : game.player2;
   game.toPromote = gameDTO.toPromote;
   game.LastFiftyMoveWithoutTake = gameDTO.LastFiftyMoveWithoutTake;
   game.numberFullMoves = gameDTO.numberFullMoves;
   game.timers = gameDTO.timers;
   game.startTimeDate = gameDTO.startTimeDate;
-  game.takenPieces = gameDTO.takenPieces;
+  game.takenPieces = {
+    black: gameDTO.takenPieces.black.map((p) => createPieceFromModel(p)),
+    white: gameDTO.takenPieces.white.map((p) => createPieceFromModel(p)),
+  };
   game.kingPos = gameDTO.kingPos;
 
   return game;
@@ -175,7 +193,6 @@ const WebSocketComponent: React.FC<GameProps> = ({
         setChess(new Game(playerName, color[random]));
       } else if (!isHost && !chess) {
         getMyColor();
-        // console.log("getColor");
       }
     }
   };
@@ -316,14 +333,7 @@ const WebSocketComponent: React.FC<GameProps> = ({
       );
     }
   };
-  type ViewMatch = {
-    player1: Player;
-    player2: Player;
-    player1Play: boolean;
-    timers;
-    startTime: number;
-    board;
-  };
+
   const sendWatchMatch = (viewMatch: GameDTO) => {
     if (socket) {
       socket.send(
@@ -374,8 +384,17 @@ const WebSocketComponent: React.FC<GameProps> = ({
 
   const applyMoveNode = (moveNode: NodeMove | null) => {
     if (!chess || moveNode == null || moveNode.state == null) return;
-    const from = moveNode.state[0];
-    const to = moveNode.state[1];
+    const state = moveNode.state.map((cellDTO) => {
+      const cell: Cell = new Cell(cellDTO.row, cellDTO.column, cellDTO.color);
+      const piece: IPiece | null = cellDTO.piece
+        ? createPieceFromModel(cellDTO.piece)
+        : null;
+      cell.piece = piece;
+
+      return cell;
+    });
+    const from = state[0];
+    const to = state[1];
     chess.board[from.row][from.column] = from;
     chess.board[to.row][to.column] = to;
     setSoundType(moveNode.type);
