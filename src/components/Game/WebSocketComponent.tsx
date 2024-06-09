@@ -191,16 +191,7 @@ const WebSocketComponent: React.FC<GameProps> = ({
     }, 14000);
     return clearInterval(indentifier);
   }, []);
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    const t = `${minutes < 10 ? "0" : ""}${minutes}:${
-      seconds < 10 ? "0" : ""
-    }${seconds}`;
 
-    if (minutes === 0) return Math.round(time * 100) / 100;
-    return t;
-  };
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
 
