@@ -135,7 +135,7 @@ const DTOToGame = (gameDTO: GameDTO): Game => {
   game.board = gameDTO.board.map((row) =>
     row.map((c: CellDTO) => DTOtoCell(c))
   );
-  console.log(parse(gameDTO.historyMove)["end"]);
+
   game.history = gameDTO.history;
   game.currentState = parse(gameDTO.historyMove)["end"];
   game.historyMove = parse(gameDTO.historyMove);
@@ -185,7 +185,7 @@ const WebSocketComponent: React.FC<GameProps> = ({
   const [isWatching, setIsWatching] = useState<boolean>(false);
 
   socket.onopen = () => {
-    console.log("connected");
+    console.info("connected");
     if (socket.OPEN) {
       if (isHost && !chess) {
         localStorage.setItem("isHost", "true");
@@ -271,7 +271,6 @@ const WebSocketComponent: React.FC<GameProps> = ({
         sendStartGame();
       }
     } else if (data.type === "viewMatch") {
-      // console.log("viewMatch");
       if (!chess || !chess.player2.name || !chess.player2.name) {
         const gameDTO: GameDTO = data.content;
         const game = DTOToGame(gameDTO);

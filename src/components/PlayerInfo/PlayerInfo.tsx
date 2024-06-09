@@ -53,7 +53,6 @@ const PlayerInfo: React.FC<BoardProps> = ({
 
   useEffect(() => {
     if (!startGame && !isWatching) {
-      console.log("gmae not start");
       return;
     }
     if (game.isTurn(player)) {
