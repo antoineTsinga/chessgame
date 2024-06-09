@@ -25,18 +25,8 @@ export default function PieceComponent({
       }
     : undefined;
 
-  const handleDragStart = (event) => {
-    const { clientX, clientY } = event;
-    console.log({ clientX, clientY }, transform);
-
-    // setInitialMousePosition({ x: clientX, y: clientY });
-  };
-
   useEffect(() => {
-    // console.log(node.current.parentElement);
-
     if (isDragging) {
-      // console.log(transform);
       handleClick(cell);
     }
   }, [isDragging]);
@@ -47,9 +37,7 @@ export default function PieceComponent({
       src={imageLoader.getImageByClass(cell.piece)}
       alt={cell.piece?.name}
       ref={setNodeRef}
-      // onClick={() => console.log("ici")}
       style={style}
-      onDragStart={handleDragStart} // Ajouter l'écouteur d'événement pour détecter le début du glissement
       {...listeners}
       {...attributes}
     />

@@ -12,6 +12,7 @@ export interface BoardProps {
   setEndGame: React.Dispatch<boolean>;
   startGame: boolean;
   startTimeDate: number;
+  isWatching: boolean;
 }
 const imageLoader = ImagesLoader.instance;
 const PlayerInfo: React.FC<BoardProps> = ({
@@ -20,6 +21,7 @@ const PlayerInfo: React.FC<BoardProps> = ({
   setEndGame,
   startGame, // if the as start
   startTimeDate, // The date from which we start counting the time elapsed by the player
+  isWatching,
 }) => {
   const [active, setActive] = useState<boolean>(false);
   const [time, setTime] = useState<number>(game.timers[player.color]);
@@ -27,63 +29,69 @@ const PlayerInfo: React.FC<BoardProps> = ({
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout>();
   const colortakenPieces: Color = game.getOpponent(player).color;
 
-  const countAdvantage = useCallback(
-    (game: Game) => {
-      const point = game
-        .leftPieceTo(player)
-        .reduce((p, p2) => p + p2.piece.value, 0);
-      const adversary = game
-        .leftPieceTo(game.getOpponent(player))
-        .reduce((p, p2) => p + p2.piece.value, 0);
+  const countAdvantage2 = () => {
+    const point = game
+      .leftPieceTo(player)
+      .reduce((p, p2) => p + p2.piece.value, 0);
+    const adversary = game
+      .leftPieceTo(game.getOpponent(player))
+      .reduce((p, p2) => p + p2.piece.value, 0);
 
-      return Math.max(0, point - adversary);
-    },
-    [player]
-  );
-
-  const interval = useCallback(() => {
-    const now = Date.now() / 1000;
-    setTime(game.timers[player.color] - (now - startTimeDate));
-  }, [startTimeDate]);
+    return Math.max(0, point - adversary);
+  };
 
   useEffect(() => {
-    if (!startGame) return;
-
-    if (game.isTurn(player)) {
-      // start timer if turn to play
-      setActive(true);
-      setIntervalId(setInterval(interval, 50));
-    } else {
-      setActive(false);
-      clearInterval(intervalId);
-    }
-
-    setAdvantage(countAdvantage(game));
-
-    return () => clearInterval(intervalId);
-  }, [countAdvantage, game, interval, player, startGame, startTimeDate]);
-
-  useEffect(() => {
-    if (time <= 0 || game.isGameOver()) {
+    if (time <= 0 || game.isGameFinished) {
       setTime(Math.max(0, time));
-      game.timers[player.color] = 0;
+      game.timers[player.color] = Math.max(0, time);
       game.setWinner();
       setActive(false);
       setEndGame(true);
       clearInterval(intervalId);
     }
-  }, [game, time]);
+  }, [game.isGameFinished, time]);
 
   useEffect(() => {
-    setTime(game.timers[player.color]);
-  }, [game.timers, player.color]);
+    if (!startGame && !isWatching) {
+      console.log("gmae not start");
+      return;
+    }
+    if (game.isTurn(player)) {
+      // start timer if turn to play
+      setTime(game.timers[player.color]);
+      setActive(true);
+      const interval = setInterval(() => {
+        const now = Date.now() / 1000;
+        const t = game.timers[player.color] - (now - game.startTimeDate);
+        setTime(t);
+      }, 50);
+      setIntervalId(interval);
+    } else {
+      setTime(game.timers[player.color]);
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      setActive(false);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [startGame, game, player, startTimeDate, isWatching]);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-    return `${minutes < 10 ? "0" : ""}${minutes}:${
+    const t = `${minutes < 10 ? "0" : ""}${minutes}:${
       seconds < 10 ? "0" : ""
     }${seconds}`;
+
+    if (minutes === 0 && seconds < 10) {
+      return Math.round(time * 100) / 100;
+    }
+    return t;
   };
 
   const printPiece = (code: string) => {
@@ -125,7 +133,7 @@ const PlayerInfo: React.FC<BoardProps> = ({
           <div className="bishop relative">{printPiece("B")}</div>
           <div className="rook relative">{printPiece("R")}</div>
           <div className="queen relative">{printPiece("Q")}</div>
-          <span>{advantage > 0 && "+" + advantage}</span>
+          <span>{countAdvantage2() > 0 && "+" + countAdvantage2()}</span>
         </div>
       </div>
 

@@ -22,10 +22,11 @@ export default function Layout() {
 
   useEffect(() => {
     if (!socket) return;
-    socket.onopen = () => {
-      console.log("connected");
+
+    if (socket.OPEN) {
+      // console.log("connected");
       setLoading(false);
-    };
+    }
 
     socket.onclose = () => {
       setLoading(false);

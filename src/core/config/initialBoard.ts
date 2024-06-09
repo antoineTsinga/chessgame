@@ -1,7 +1,5 @@
-
-import Cell  from "../types/Cell.ts";
+import Cell from "../types/Cell.ts";
 import { initialPositions } from "./variables/pieces.ts";
-
 
 function createBoard() {
   const board = new Array<Cell[]>(8);
@@ -12,8 +10,7 @@ function createBoard() {
       board[row][col] = new Cell(
         row,
         col,
-        (row + col) % 2 === 1 ? "black" : "white",
-        board
+        (row + col) % 2 === 1 ? "black" : "white"
       );
     }
   }

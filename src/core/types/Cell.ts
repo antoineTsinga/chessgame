@@ -6,20 +6,20 @@ export default class Cell {
   column: number;
   piece: IPiece | null = null;
   color: Color;
-  board: BoardType;
+  // board: BoardType;
 
-  constructor(row: number, col: number, color: Color, board: BoardType) {
+  constructor(row: number, col: number, color: Color) {
     this.row = row;
     this.column = col;
     this.color = color;
-    this.board = board;
+    // this.board = board;
   }
 
-  movesPossible(): Cell[] {
+  movesPossible(board: BoardType): Cell[] {
     if (this.piece == null) {
       return [];
     }
-    return this.piece.getPossiblesMove(this, this.board);
+    return this.piece.getPossiblesMove(this, board);
   }
 
   movePieceTo(cell: Cell): boolean {

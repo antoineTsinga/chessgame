@@ -17,6 +17,7 @@ export default class Game {
   };
   currentState: NodeMove;
   isGameStart: boolean = false;
+  isGameFinished: boolean = false;
   winner: Player | null = null;
   turn: number = 0;
   whoPlay: Player;
@@ -24,6 +25,7 @@ export default class Game {
   LastFiftyMoveWithoutTake: number[] = [];
   numberFullMoves: number = 1;
   timers: { black: number; white: number } = { black: 600, white: 600 };
+  startTimeDate: number = Date.now() / 1000;
   takenPieces: { black: IPiece[]; white: IPiece[] } = { black: [], white: [] };
   kingPos: { white: [number, number]; black: [number, number] } = {
     white: [7, 4],
@@ -51,7 +53,7 @@ export default class Game {
   }
 
   isTurn(player: Player): boolean {
-    return this.whoPlay === player;
+    return this.whoPlay.color === player.color;
   }
   getTimer(player: Player): number {
     return this.timers[player.color];
@@ -60,13 +62,13 @@ export default class Game {
   isGameOver(): boolean {
     if (this.winner) return true;
     this.setWinner();
-    return (
+    this.isGameFinished =
       this.isCheckMat(this.player1) ||
       this.isCheckMat(this.player2) ||
       this.isNull() ||
       this.timers.black <= 0 ||
-      this.timers.white <= 0
-    );
+      this.timers.white <= 0;
+    return this.isGameFinished;
   }
 
   setWinner(): void {
@@ -415,10 +417,11 @@ export default class Game {
     }
   }
 
-  move({ from, to, promotion, timer, color }: Move): string {
+  move({ from, to, promotion, timer, color }: Move, startTime: number): string {
     const fromCell = this.board[from[0]][from[1]];
     const toCell = this.board[to[0]][to[1]];
     this.timers[color] = timer;
+    this.startTimeDate = startTime;
 
     const isCastle =
       fromCell?.piece?.code === "K" &&

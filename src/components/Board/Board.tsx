@@ -26,13 +26,11 @@ export interface BoardProps {
 const imageLoader = ImagesLoader.instance;
 
 const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
-  const [current, setCurrent] = useState<Cell | null>(null);
-  const [prevCell, setPrevCell] = useState<Cell | null>(null);
-  const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]);
-  const [moveMade, setMoveMade] = useState<Cell[]>([]);
-  const [promotionModale, setPromotionModale] = useState<boolean>(false);
-  const [inPiece, setInPiece] = useState(null);
-  const [isOverCell, setIsOverCell] = useState<Cell | null>(null);
+  const [prevCell, setPrevCell] = useState<Cell | null>(null); // from cell to make the move(from -> to)
+  const [possibleMoves, setPossibleMoves] = useState<Cell[]>([]); // list of possible moves from a cell
+  const [moveMade, setMoveMade] = useState<Cell[]>([]); // Previous move made by player
+  const [promotionModale, setPromotionModale] = useState<boolean>(false); // display the promotionnal modal
+  const [isOverCell, setIsOverCell] = useState<Cell | null>(null); // Cellule hovering by the dragging piece
   const [isDropped, setIsDropped] = useState(false);
   const handleClick = (cell: Cell) => {
     if (promotionModale) return;
@@ -43,7 +41,6 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
     }
 
     if (game.whoPlay.color !== game.player1.color) return;
-    setCurrent(cell);
 
     if (prevCell && !prevCell.isEmpty) {
       if (game.isPromotion(prevCell, cell)) {
@@ -52,7 +49,6 @@ const Board: React.FC<BoardProps> = ({ game, setMove, startGame }) => {
       }
       makeMove(prevCell, cell, game, setPossibleMoves, setPrevCell, setMove);
     } else {
-      setCurrent(cell);
       showPosibleMove(cell, game, setPossibleMoves, setPrevCell);
     }
   };
