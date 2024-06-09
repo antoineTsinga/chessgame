@@ -188,9 +188,12 @@ const WebSocketComponent: React.FC<GameProps> = ({
     console.log("connected");
     if (socket.OPEN) {
       if (isHost && !chess) {
+        localStorage.setItem("isHost", "true");
         const color: Color[] = ["white", "black"];
         const random = Math.round(Math.random());
-        setChess(new Game(playerName, color[random]));
+        const game = new Game(playerName, color[random]);
+        game.hostCode = roomId;
+        setChess(game);
       } else if (!isHost && !chess) {
         getMyColor();
       }
@@ -222,6 +225,8 @@ const WebSocketComponent: React.FC<GameProps> = ({
         setTimeLeftTo(startTime);
         setSoundType(moveMaked);
       }
+
+      localStorage.setItem("game", stringify(getGameDTO(chess)));
     } else if (data.type === "findcolor") {
       // Player who join game send findcolor message to know is color and the send a response
       if (isHost && chess && !chess.player2.name) {
@@ -239,6 +244,7 @@ const WebSocketComponent: React.FC<GameProps> = ({
         const players = data.content;
         const game = new Game(players.guest.name, players.guest.color);
         game.player2.name = players.host.name;
+        game.hostCode = roomId;
 
         setChess(game);
         sendStartGame();
